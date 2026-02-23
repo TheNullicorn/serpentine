@@ -1,0 +1,12 @@
+{
+  "Head": "Serpent_Demo_Head",
+  "Body": "Serpent_Demo_Body",
+  "Tail": "Serpent_Demo_Tail",
+  "BodySegmentCount": [
+    40,
+    80
+  ],
+  "DefaultHardDampingSpeed": 10.0,
+  "DefaultSoftDampingSpeed": 5.0,
+  "DefaultSoftDampingCoefficient": 0.95
+}

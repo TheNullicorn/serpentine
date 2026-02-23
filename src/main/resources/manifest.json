@@ -1,0 +1,17 @@
+{
+    "Group": "Nullicorn",
+    "Name": "Serpent",
+    "Version": "1.0.0-SNAPSHOT",
+    "Authors": [
+        {
+            "Name": "Nullicorn",
+            "Url": "https://nullicorn.me"
+        }
+    ],
+    "IncludesAssetPack": true,
+    "Dependencies": {
+        "Hytale:EntityModule": "*"
+    },
+    "ServerVersion": "2026.02.19-ad6f58ec8",
+    "Main": "me.nullicorn.hytale.serpent.SerpentPlugin"
+}

@@ -1,0 +1,8 @@
+# Gradle cache
+.gradle/
+
+# JetBrains IDE project settings
+.idea/
+
+# Hytale dev server
+devserver/
