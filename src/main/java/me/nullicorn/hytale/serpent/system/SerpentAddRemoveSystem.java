@@ -1,6 +1,9 @@
 package me.nullicorn.hytale.serpent.system;
 
 import com.hypixel.hytale.component.*;
+import com.hypixel.hytale.component.dependency.Dependency;
+import com.hypixel.hytale.component.dependency.Order;
+import com.hypixel.hytale.component.dependency.SystemDependency;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.component.system.RefSystem;
 import com.hypixel.hytale.math.vector.Vector3f;
@@ -15,8 +18,18 @@ import me.nullicorn.hytale.serpent.component.SerpentSegment;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.Set;
 
 public final class SerpentAddRemoveSystem extends RefSystem<EntityStore> {
+    @Nonnull
+    @Override
+    public Set<Dependency<EntityStore>> getDependencies() {
+        return Collections.singleton(
+            new SystemDependency<>(Order.AFTER, SerpentNetworkIdSystem.class)
+        );
+    }
+
     @Nullable
     @Override
     public Query<EntityStore> getQuery() {
@@ -33,18 +46,15 @@ public final class SerpentAddRemoveSystem extends RefSystem<EntityStore> {
         final Serpent serpent = commandBuffer.getComponent(ref, Serpent.getComponentType());
         assert serpent != null;
 
-        final Model headModel = Model.createUnitScaleModel(serpent.config.getHead().getModel());
-        final Model bodyModel = Model.createUnitScaleModel(serpent.config.getBody().getModel());
-        final Model tailModel = Model.createUnitScaleModel(serpent.config.getTail().getModel());
-
-        //noinspection unchecked
-        serpent.segments = new Ref[serpent.joints.length - 1];
+        final Model headModel = Model.createUnitScaleModel(serpent.getConfig().getHead().getModel());
+        final Model bodyModel = Model.createUnitScaleModel(serpent.getConfig().getBody().getModel());
+        final Model tailModel = Model.createUnitScaleModel(serpent.getConfig().getTail().getModel());
 
         for (int i = 0; i < serpent.segments.length; i++) {
-            final TransformComponent transform = new TransformComponent(serpent.joints[i + 1].position.clone(), new Vector3f());
+            final TransformComponent transform = new TransformComponent(serpent.joints[0].position.clone(), new Vector3f());
             final SerpentSegment segment = new SerpentSegment(ref, i);
             if (i == 0) {
-                commandBuffer.addComponent(ref, TransformComponent.getComponentType(), transform);
+                commandBuffer.putComponent(ref, TransformComponent.getComponentType(), transform);
                 commandBuffer.addComponent(ref, ModelComponent.getComponentType(), new ModelComponent(headModel));
                 commandBuffer.addComponent(ref, SerpentSegment.getComponentType(), segment);
                 serpent.segments[i] = ref;

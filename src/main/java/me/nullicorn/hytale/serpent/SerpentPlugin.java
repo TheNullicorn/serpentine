@@ -12,10 +12,7 @@ import me.nullicorn.hytale.serpent.asset.SerpentSegmentConfig;
 import me.nullicorn.hytale.serpent.command.SerpentCommand;
 import me.nullicorn.hytale.serpent.component.Serpent;
 import me.nullicorn.hytale.serpent.component.SerpentSegment;
-import me.nullicorn.hytale.serpent.system.SerpentAddRemoveSystem;
-import me.nullicorn.hytale.serpent.system.SerpentSegmentTransformSystem;
-import me.nullicorn.hytale.serpent.system.SerpentSolverSystem;
-import me.nullicorn.hytale.serpent.system.SerpentTargetSystem;
+import me.nullicorn.hytale.serpent.system.*;
 
 import javax.annotation.Nonnull;
 
@@ -52,10 +49,10 @@ public final class SerpentPlugin extends JavaPlugin {
                 .loadsAfter(SerpentSegmentConfig.class).build()
         );
 
-//        this.serpentComponentType = this.getEntityStoreRegistry().registerComponent(Serpent.class, Serpent.ID, Serpent.CODEC);
-        this.serpentComponentType = this.getEntityStoreRegistry().registerComponent(Serpent.class, Serpent::new);
+        this.serpentComponentType = this.getEntityStoreRegistry().registerComponent(Serpent.class, Serpent.ID, Serpent.CODEC);
         this.serpentSegmentComponentType = this.getEntityStoreRegistry().registerComponent(SerpentSegment.class, SerpentSegment::new);
 
+        this.getEntityStoreRegistry().registerSystem(new SerpentNetworkIdSystem());
         this.getEntityStoreRegistry().registerSystem(new SerpentAddRemoveSystem());
         this.getEntityStoreRegistry().registerSystem(new SerpentTargetSystem());
         this.getEntityStoreRegistry().registerSystem(new SerpentSolverSystem());

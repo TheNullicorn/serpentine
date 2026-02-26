@@ -73,7 +73,7 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
                 if (i < serpent.joints.length - 1) {
                     final Vector3d dirIn = predictions[i].clone().subtract(predictions[i - 1]).normalize();
                     final Vector3d dirOut = predictions[i + 1].clone().subtract(predictions[i]).normalize();
-                    final double angleLimit = Math.toRadians(serpent.config.getDefaultSoftAngleLimit());
+                    final double angleLimit = Math.toRadians(serpent.getConfig().getDefaultSoftAngleLimit());
                     final double angleBetween = getAngleBetween(dirIn, dirOut);
                     if (angleBetween > angleLimit) {
                         final Vector3d perp = dirIn.cross(dirOut);
@@ -97,16 +97,18 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
         for (int i = 0; i < serpent.joints.length; i++) {
             final Serpent.Joint joint = serpent.joints[i];
             // Derive velocity from the change in `position` this tick.
-            joint.velocity = predictions[i].clone().subtract(joint.position).scale(1 / dt);
+            joint.velocity.assign(predictions[i].clone().subtract(joint.position).scale(1 / dt));
             // `prediction` becomes our new `position`.
-            joint.position = predictions[i].clone();
+            joint.position.assign(predictions[i].clone());
 
             // Dampen velocity.
             final double speed = joint.velocity.length();
-            if (speed > serpent.config.getDefaultHardDampingSpeed()) {
-                joint.velocity = joint.velocity.clone().normalize().scale(serpent.config.getDefaultHardDampingSpeed());
-            } else if (speed > serpent.config.getDefaultSoftDampingSpeed()) {
-                joint.velocity = joint.velocity.clone().scale(serpent.config.getDefaultSoftDampingCoefficient());
+            if (speed > serpent.getConfig().getDefaultHardDampingSpeed()) {
+                // Normalize velocity and then scale it to exactly the hard speed cap.
+                joint.velocity.scale((1 / speed) * serpent.getConfig().getDefaultHardDampingSpeed());
+            } else if (speed > serpent.getConfig().getDefaultSoftDampingSpeed()) {
+                // Dampen velocity from its current value.
+                joint.velocity.scale(serpent.getConfig().getDefaultSoftDampingCoefficient());
             }
         }
     }
