@@ -6,7 +6,6 @@ import com.hypixel.hytale.component.system.RefSystem;
 import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
-import com.hypixel.hytale.server.core.modules.entity.component.EntityScaleComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
@@ -42,15 +41,11 @@ public final class SerpentAddRemoveSystem extends RefSystem<EntityStore> {
         serpent.segments = new Ref[serpent.lengths.length];
 
         for (int i = 0; i < serpent.segments.length; i++) {
-            final double t = (double) (serpent.segments.length - 1 - i) / (serpent.segments.length - 1);
-            final double scale = (1 - t) * serpent.tailScale + t * serpent.headScale;
-
             final TransformComponent transform = new TransformComponent(serpent.joints[i + 1].position.clone(), new Vector3f());
             final SerpentSegment segment = new SerpentSegment(ref, i);
             if (i == 0) {
                 commandBuffer.addComponent(ref, TransformComponent.getComponentType(), transform);
                 commandBuffer.addComponent(ref, ModelComponent.getComponentType(), new ModelComponent(headModel));
-                commandBuffer.addComponent(ref, EntityScaleComponent.getComponentType(), new EntityScaleComponent((float) scale));
                 commandBuffer.addComponent(ref, SerpentSegment.getComponentType(), segment);
                 serpent.segments[i] = ref;
             } else {
@@ -65,7 +60,6 @@ public final class SerpentAddRemoveSystem extends RefSystem<EntityStore> {
                     )
                 );
                 holder.addComponent(store.getRegistry().getNonSerializedComponentType(), NonSerialized.get());
-                holder.addComponent(EntityScaleComponent.getComponentType(), new EntityScaleComponent((float) scale));
                 holder.addComponent(SerpentSegment.getComponentType(), segment);
                 serpent.segments[i] = commandBuffer.addEntity(holder, reason);
             }

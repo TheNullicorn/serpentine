@@ -66,7 +66,6 @@ public final class SerpentSegmentTransformSystem extends EntityTickingSystem<Ent
 
         rotation.setPitch((float) Math.asin(direction.y));
         rotation.setYaw((float) (Math.atan2(direction.x, direction.z) + Math.PI));
-        rotation.setRoll((float) (Math.sin(serpent.twistTime + ((serpent.segments.length - serpentSegment.index - 1) * 0.1)) * Math.toRadians(10 + (double) serpentSegment.index / (serpent.segments.length - 1) * 50)));
         transform.setRotation(rotation);
         transform.setPosition(serpent.joints[serpentSegment.index + 1].position.clone().add(direction.clone().scale(serpent.lengths[serpentSegment.index] / 2.0)));
     }

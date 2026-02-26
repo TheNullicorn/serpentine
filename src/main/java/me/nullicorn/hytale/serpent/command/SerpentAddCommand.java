@@ -9,7 +9,6 @@ import com.hypixel.hytale.math.range.IntRange;
 import com.hypixel.hytale.math.vector.Vector3d;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.command.system.CommandContext;
-import com.hypixel.hytale.server.core.command.system.arguments.system.DefaultArg;
 import com.hypixel.hytale.server.core.command.system.arguments.system.OptionalArg;
 import com.hypixel.hytale.server.core.command.system.arguments.system.RequiredArg;
 import com.hypixel.hytale.server.core.command.system.arguments.types.ArgTypes;
@@ -28,9 +27,6 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public final class SerpentAddCommand extends AbstractPlayerCommand {
-    private static final double HEAD_SCALE_DEFAULT = 3.0;
-    private static final double TAIL_SCALE_DEFAULT = 2.0;
-
     public static final SingleArgumentType<SerpentConfig> SERPENT_ASSET_ARG_TYPE = new AssetArgumentType<>(
         "server.commands.parsing.argtype.asset.serpent-config.name", SerpentConfig.class, "server.commands.parsing.argtype.asset.serpent-config.usage"
     );
@@ -47,24 +43,6 @@ public final class SerpentAddCommand extends AbstractPlayerCommand {
             "segments",
             "server.commands.serpent.add.segments.desc",
             ArgTypes.INTEGER
-        );
-
-    private final DefaultArg<Double> headScaleArg =
-        this.withDefaultArg(
-            "head-scale",
-            "server.commands.serpent.add.head-scale.desc",
-            ArgTypes.DOUBLE,
-            HEAD_SCALE_DEFAULT,
-            Double.toString(HEAD_SCALE_DEFAULT)
-        );
-
-    private final DefaultArg<Double> tailScaleArg =
-        this.withDefaultArg(
-            "tail-scale",
-            "server.commands.serpent.add.tail-scale.desc",
-            ArgTypes.DOUBLE,
-            TAIL_SCALE_DEFAULT,
-            Double.toString(TAIL_SCALE_DEFAULT)
         );
 
     public SerpentAddCommand() {
@@ -92,27 +70,21 @@ public final class SerpentAddCommand extends AbstractPlayerCommand {
             return;
         }
 
-        final double headScale = context.get(this.headScaleArg);
-        final double tailScale = context.get(this.tailScaleArg);
-
         final Vector3d[] joints = new Vector3d[segmentCount + 1];
         double distance = 0;
         for (int i = 0; i < joints.length; i++) {
-            final double t = (double) (joints.length - 2 - i) / (joints.length - 2);
-            final double scale = (1 - t) * tailScale + t * headScale;
-
             joints[i] = playerRef.getTransform().getPosition().clone().add(0, 0, -distance);
             if (i == 0) {
-                distance += scale * config.getHead().getLength();
-            } else if (i == joints.length - 2) {
-                distance += scale * config.getTail().getLength();
+                distance += config.getHead().getLength();
+            } else if (i < joints.length - 1) {
+                distance += config.getBody().getLength();
             } else {
-                distance += scale * config.getBody().getLength();
+                distance += config.getTail().getLength();
             }
         }
 
         final Holder<EntityStore> holder = store.getRegistry().newHolder();
-        holder.addComponent(Serpent.getComponentType(), new Serpent(joints, config, headScale, tailScale));
+        holder.addComponent(Serpent.getComponentType(), new Serpent(joints, config));
         holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
         holder.addComponent(UUIDComponent.getComponentType(), UUIDComponent.randomUUID());
         store.addEntity(holder, AddReason.SPAWN);

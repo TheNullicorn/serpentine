@@ -110,8 +110,6 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
                 joint.velocity = joint.velocity.clone().scale(serpent.config.getDefaultSoftDampingCoefficient());
             }
         }
-
-        serpent.twistTime += dt;
     }
 
     private static double getAngleBetween(final Vector3d v1, final Vector3d v2) {
