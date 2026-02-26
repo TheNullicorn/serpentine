@@ -15,7 +15,7 @@ public final class Serpent implements Component<EntityStore> {
 
     public SerpentConfig config;
     public Vector3d target;
-    public SerpentJoint[] joints;
+    public Joint[] joints;
     public double[] lengths;
     public Ref<EntityStore>[] segments;
 
@@ -31,9 +31,9 @@ public final class Serpent implements Component<EntityStore> {
             throw new IllegalArgumentException("joints must have at least 2 elements");
         }
         this.config = config;
-        this.joints = new SerpentJoint[joints.length];
+        this.joints = new Joint[joints.length];
         for (int i = 0; i < joints.length; i++) {
-            final SerpentJoint joint = new SerpentJoint();
+            final Joint joint = new Joint();
             joint.position = joints[i].clone();
             this.joints[i] = joint;
         }
@@ -53,5 +53,16 @@ public final class Serpent implements Component<EntityStore> {
         clone.config = this.config;
         // TODO!!!
         return clone;
+    }
+
+    public static final class Joint {
+        /**
+         * The joint's current position.
+         */
+        public Vector3d position;
+        /**
+         * The joint's current velocity.
+         */
+        public Vector3d velocity = new Vector3d();
     }
 }

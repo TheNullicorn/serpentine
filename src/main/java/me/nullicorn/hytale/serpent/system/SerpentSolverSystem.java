@@ -14,7 +14,6 @@ import com.hypixel.hytale.server.core.modules.time.TimeResource;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.component.Serpent;
-import me.nullicorn.hytale.serpent.component.SerpentJoint;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -96,7 +95,7 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
         }
 
         for (int i = 0; i < serpent.joints.length; i++) {
-            final SerpentJoint joint = serpent.joints[i];
+            final Serpent.Joint joint = serpent.joints[i];
             // Derive velocity from the change in `position` this tick.
             joint.velocity = predictions[i].clone().subtract(joint.position).scale(1 / dt);
             // `prediction` becomes our new `position`.
