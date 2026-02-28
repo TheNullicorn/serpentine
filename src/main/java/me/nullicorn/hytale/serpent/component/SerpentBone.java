@@ -6,24 +6,24 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.SerpentPlugin;
 
-public final class SerpentSegment implements Component<EntityStore> {
+public final class SerpentBone implements Component<EntityStore> {
     public Ref<EntityStore> serpent;
     public int index;
 
-    public static ComponentType<EntityStore, SerpentSegment> getComponentType() {
-        return SerpentPlugin.get().getSerpentSegmentComponentType();
+    public static ComponentType<EntityStore, SerpentBone> getComponentType() {
+        return SerpentPlugin.get().getSerpentBoneComponentType();
     }
 
-    public SerpentSegment(final Ref<EntityStore> serpent, final int index) {
+    public SerpentBone(final Ref<EntityStore> serpent, final int index) {
         this.serpent = serpent;
         this.index = index;
     }
 
-    public SerpentSegment() {
+    public SerpentBone() {
     }
 
     @Override
     public Component<EntityStore> clone() {
-        return new SerpentSegment(this.serpent, this.index);
+        return new SerpentBone(this.serpent, this.index);
     }
 }

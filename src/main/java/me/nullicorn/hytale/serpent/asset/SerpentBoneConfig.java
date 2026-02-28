@@ -14,12 +14,12 @@ import com.hypixel.hytale.codec.validation.ValidatorCache;
 import com.hypixel.hytale.codec.validation.Validators;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
 
-public final class SerpentSegmentConfig implements JsonAssetWithMap<String, DefaultAssetMap<String, SerpentSegmentConfig>> {
-    public static final String PATH = "NPC/SerpentSegmentConfig";
+public final class SerpentBoneConfig implements JsonAssetWithMap<String, DefaultAssetMap<String, SerpentBoneConfig>> {
+    public static final String PATH = "NPC/SerpentBoneConfig";
 
-    public static final AssetBuilderCodec<String, SerpentSegmentConfig> CODEC = AssetBuilderCodec.builder(
-            SerpentSegmentConfig.class,
-            SerpentSegmentConfig::new,
+    public static final AssetBuilderCodec<String, SerpentBoneConfig> CODEC = AssetBuilderCodec.builder(
+            SerpentBoneConfig.class,
+            SerpentBoneConfig::new,
             Codec.STRING,
             (asset, s) -> asset.id = s,
             asset -> asset.id,
@@ -28,31 +28,31 @@ public final class SerpentSegmentConfig implements JsonAssetWithMap<String, Defa
         )
         .appendInherited(
             new KeyedCodec<>("Model", Codec.STRING, true),
-            (serpentSegmentConfig, s) -> serpentSegmentConfig.modelAssetId = s,
-            serpentSegmentConfig -> serpentSegmentConfig.modelAssetId,
-            (serpentSegmentConfig, parent) -> serpentSegmentConfig.modelAssetId = parent.modelAssetId
+            (serpentBoneConfig, s) -> serpentBoneConfig.modelAssetId = s,
+            serpentBoneConfig -> serpentBoneConfig.modelAssetId,
+            (serpentBoneConfig, parent) -> serpentBoneConfig.modelAssetId = parent.modelAssetId
         )
         .addValidator(Validators.nonNull())
         .addValidator(ModelAsset.VALIDATOR_CACHE.getValidator())
         .add()
         .appendInherited(
             new KeyedCodec<>("Length", Codec.DOUBLE, true),
-            (serpentSegmentConfig, s) -> serpentSegmentConfig.length = s,
-            serpentSegmentConfig -> serpentSegmentConfig.length,
-            (serpentSegmentConfig, parent) -> serpentSegmentConfig.length = parent.length
+            (serpentBoneConfig, s) -> serpentBoneConfig.length = s,
+            serpentBoneConfig -> serpentBoneConfig.length,
+            (serpentBoneConfig, parent) -> serpentBoneConfig.length = parent.length
         )
         .addValidator(Validators.nonNull())
         .addValidator(Validators.min(0.0d))
         .add()
-        .afterDecode(serpentSegmentConfig -> serpentSegmentConfig.model = ModelAsset.getAssetMap().getAsset(serpentSegmentConfig.modelAssetId))
+        .afterDecode(serpentBoneConfig -> serpentBoneConfig.model = ModelAsset.getAssetMap().getAsset(serpentBoneConfig.modelAssetId))
         .build();
 
-    public static final Codec<String> CHILD_ASSET_CODEC = new ContainedAssetCodec<>(SerpentSegmentConfig.class, CODEC);
+    public static final Codec<String> CHILD_ASSET_CODEC = new ContainedAssetCodec<>(SerpentBoneConfig.class, CODEC);
 
     public static final ValidatorCache<String> VALIDATOR_CACHE =
-        new ValidatorCache<>(new AssetKeyValidator<>(SerpentSegmentConfig::getAssetStore));
+        new ValidatorCache<>(new AssetKeyValidator<>(SerpentBoneConfig::getAssetStore));
 
-    private static AssetStore<String, SerpentSegmentConfig, DefaultAssetMap<String, SerpentSegmentConfig>> ASSET_STORE;
+    private static AssetStore<String, SerpentBoneConfig, DefaultAssetMap<String, SerpentBoneConfig>> ASSET_STORE;
 
     private String id;
     private AssetExtraInfo.Data extraData;
@@ -61,14 +61,14 @@ public final class SerpentSegmentConfig implements JsonAssetWithMap<String, Defa
 
     private ModelAsset model;
 
-    public static AssetStore<String, SerpentSegmentConfig, DefaultAssetMap<String, SerpentSegmentConfig>> getAssetStore() {
+    public static AssetStore<String, SerpentBoneConfig, DefaultAssetMap<String, SerpentBoneConfig>> getAssetStore() {
         if (ASSET_STORE == null) {
-            ASSET_STORE = AssetRegistry.getAssetStore(SerpentSegmentConfig.class);
+            ASSET_STORE = AssetRegistry.getAssetStore(SerpentBoneConfig.class);
         }
         return ASSET_STORE;
     }
 
-    public static DefaultAssetMap<String, SerpentSegmentConfig> getAssetMap() {
+    public static DefaultAssetMap<String, SerpentBoneConfig> getAssetMap() {
         return getAssetStore().getAssetMap();
     }
 

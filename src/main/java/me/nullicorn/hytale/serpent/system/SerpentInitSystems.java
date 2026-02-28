@@ -23,9 +23,9 @@ public final class SerpentInitSystems {
         final Ref<EntityStore> ref,
         final ComponentAccessor<EntityStore> componentAccessor
     ) {
-        serpent.segments[0] = ref;
+        serpent.bones[0] = ref;
 
-        final Model headModel = Model.createUnitScaleModel(serpent.getSegmentConfig(0).getModel());
+        final Model headModel = Model.createUnitScaleModel(serpent.getBoneConfig(0).getModel());
         componentAccessor.putComponent(ref, ModelComponent.getComponentType(), new ModelComponent(headModel));
 
         if (componentAccessor.getComponent(ref, NetworkId.getComponentType()) == null) {
@@ -56,7 +56,7 @@ public final class SerpentInitSystems {
                 holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
             }
 
-            final Transform headTransform = serpent.getSegmentTransform(0);
+            final Transform headTransform = serpent.getBoneTransform(0);
             final TransformComponent actualTransform = holder.getComponent(TransformComponent.getComponentType());
             if (actualTransform == null) {
                 // Entity doesn't have a transform of its own, so give it the serpent's head transform.

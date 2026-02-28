@@ -8,10 +8,10 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.asset.SerpentConfig;
-import me.nullicorn.hytale.serpent.asset.SerpentSegmentConfig;
+import me.nullicorn.hytale.serpent.asset.SerpentBoneConfig;
 import me.nullicorn.hytale.serpent.command.SerpentCommand;
 import me.nullicorn.hytale.serpent.component.Serpent;
-import me.nullicorn.hytale.serpent.component.SerpentSegment;
+import me.nullicorn.hytale.serpent.component.SerpentBone;
 import me.nullicorn.hytale.serpent.system.*;
 
 import javax.annotation.Nonnull;
@@ -20,7 +20,7 @@ public final class SerpentPlugin extends JavaPlugin {
     private static SerpentPlugin instance;
 
     private ComponentType<EntityStore, Serpent> serpentComponentType;
-    private ComponentType<EntityStore, SerpentSegment> serpentSegmentComponentType;
+    private ComponentType<EntityStore, SerpentBone> serpentBoneComponentType;
 
     public static SerpentPlugin get() {
         return instance;
@@ -35,10 +35,10 @@ public final class SerpentPlugin extends JavaPlugin {
         instance = this;
 
         this.getAssetRegistry().register(
-            HytaleAssetStore.builder(SerpentSegmentConfig.class, new DefaultAssetMap<>())
-                .setPath(SerpentSegmentConfig.PATH)
-                .setCodec(SerpentSegmentConfig.CODEC)
-                .setKeyFunction(SerpentSegmentConfig::getId)
+            HytaleAssetStore.builder(SerpentBoneConfig.class, new DefaultAssetMap<>())
+                .setPath(SerpentBoneConfig.PATH)
+                .setCodec(SerpentBoneConfig.CODEC)
+                .setKeyFunction(SerpentBoneConfig::getId)
                 .loadsAfter(ModelAsset.class).build()
         );
         this.getAssetRegistry().register(
@@ -46,11 +46,11 @@ public final class SerpentPlugin extends JavaPlugin {
                 .setPath(SerpentConfig.PATH)
                 .setCodec(SerpentConfig.CODEC)
                 .setKeyFunction(SerpentConfig::getId)
-                .loadsAfter(SerpentSegmentConfig.class).build()
+                .loadsAfter(SerpentBoneConfig.class).build()
         );
 
         this.serpentComponentType = this.getEntityStoreRegistry().registerComponent(Serpent.class, Serpent.ID, Serpent.CODEC);
-        this.serpentSegmentComponentType = this.getEntityStoreRegistry().registerComponent(SerpentSegment.class, SerpentSegment::new);
+        this.serpentBoneComponentType = this.getEntityStoreRegistry().registerComponent(SerpentBone.class, SerpentBone::new);
 
         // Systems for initializing `Serpent` entities.
         this.getEntityStoreRegistry().registerSystem(new SerpentInitSystems.PreSpawnSystem());
@@ -61,9 +61,9 @@ public final class SerpentPlugin extends JavaPlugin {
         this.getEntityStoreRegistry().registerSystem(new SerpentTargetSystem());
         this.getEntityStoreRegistry().registerSystem(new SerpentSolverSystem());
 
-        // Systems for managing `SerpentSegment` transforms and lifetimes.
-        this.getEntityStoreRegistry().registerSystem(new SerpentSegmentLoadAndTransformSystem());
-        this.getEntityStoreRegistry().registerSystem(new SerpentSegmentUnloadSystem());
+        // Systems for managing `SerpentBone` transforms and lifetimes.
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneLoadAndTransformSystem());
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneUnloadSystem());
 
         this.getCommandRegistry().registerCommand(new SerpentCommand());
     }
@@ -77,7 +77,7 @@ public final class SerpentPlugin extends JavaPlugin {
         return this.serpentComponentType;
     }
 
-    public ComponentType<EntityStore, SerpentSegment> getSerpentSegmentComponentType() {
-        return this.serpentSegmentComponentType;
+    public ComponentType<EntityStore, SerpentBone> getSerpentBoneComponentType() {
+        return this.serpentBoneComponentType;
     }
 }

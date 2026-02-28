@@ -11,7 +11,7 @@ import com.hypixel.hytale.server.core.modules.entity.component.TransformComponen
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import com.hypixel.hytale.server.npc.NPCPlugin;
 import me.nullicorn.hytale.serpent.component.Serpent;
-import me.nullicorn.hytale.serpent.component.SerpentSegment;
+import me.nullicorn.hytale.serpent.component.SerpentBone;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,7 +45,7 @@ public final class SerpentTargetSystem extends EntityTickingSystem<EntityStore> 
         Vector3d closestPos = null;
         double closestDistSq = Double.POSITIVE_INFINITY;
         for (final Ref<EntityStore> entityRef : nearbyEntities) {
-            if (commandBuffer.getComponent(entityRef, SerpentSegment.getComponentType()) != null) {
+            if (commandBuffer.getComponent(entityRef, SerpentBone.getComponentType()) != null) {
                 continue;
             }
 

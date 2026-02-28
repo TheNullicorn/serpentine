@@ -14,12 +14,12 @@ import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.SerpentPlugin;
 import me.nullicorn.hytale.serpent.asset.SerpentConfig;
-import me.nullicorn.hytale.serpent.asset.SerpentSegmentConfig;
+import me.nullicorn.hytale.serpent.asset.SerpentBoneConfig;
 
 public final class Serpent implements Component<EntityStore> {
     public static final String ID = "Serpent";
 
-    @SuppressWarnings("unchecked") // for initializing `segments` array which has generics (Ref<EntityStore>).
+    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
     public static final BuilderCodec<Serpent> CODEC = BuilderCodec.builder(Serpent.class, Serpent::new)
         .append(
             new KeyedCodec<>("Config", Codec.STRING, true),
@@ -33,7 +33,7 @@ public final class Serpent implements Component<EntityStore> {
             new KeyedCodec<>("Joints", new ArrayCodec<>(Joint.CODEC, Joint[]::new), true),
             (serpent, s) -> {
                 serpent.joints = s;
-                serpent.segments = new Ref[serpent.joints.length - 1];
+                serpent.bones = new Ref[serpent.joints.length - 1];
                 serpent.target = serpent.joints[0].position;
             },
             (serpent) -> serpent.joints
@@ -51,7 +51,7 @@ public final class Serpent implements Component<EntityStore> {
     public Joint[] joints;
 
     private SerpentConfig config;
-    public Ref<EntityStore>[] segments;
+    public Ref<EntityStore>[] bones;
     public Vector3d target;
 
     public static ComponentType<EntityStore, Serpent> getComponentType() {
@@ -61,7 +61,7 @@ public final class Serpent implements Component<EntityStore> {
     private Serpent() {
     }
 
-    @SuppressWarnings("unchecked") // for initializing `segments` array which has generics (Ref<EntityStore>).
+    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
     public Serpent(final Vector3d[] joints, final SerpentConfig config) {
         if (joints.length < 2) {
             throw new IllegalArgumentException("joints must have at least 2 elements");
@@ -74,29 +74,29 @@ public final class Serpent implements Component<EntityStore> {
             this.joints[i] = joint;
         }
         this.target = joints[0].clone();
-        this.segments = new Ref[this.joints.length - 1];
+        this.bones = new Ref[this.joints.length - 1];
     }
 
-    public SerpentSegmentConfig getSegmentConfig(final int index) {
-        if (index < 0 || index >= this.segments.length) {
+    public SerpentBoneConfig getBoneConfig(final int index) {
+        if (index < 0 || index >= this.bones.length) {
             throw new IndexOutOfBoundsException(index);
         }
         if (index == 0) {
             return this.config.getHead();
         }
-        if (index < this.segments.length - 1) {
+        if (index < this.bones.length - 1) {
             return this.config.getBody();
         }
         return this.config.getTail();
     }
 
-    public Transform getSegmentTransform(final int index) {
-        if (index < 0 || index >= this.segments.length) {
+    public Transform getBoneTransform(final int index) {
+        if (index < 0 || index >= this.bones.length) {
             throw new IndexOutOfBoundsException(index);
         }
 
         final Vector3d direction = this.joints[index].position.clone().subtract(this.joints[index + 1].position).normalize();
-        final double length = this.getSegmentConfig(index).getLength();
+        final double length = this.getBoneConfig(index).getLength();
 
         final Vector3d offset = direction.clone().scale(length / 2.0);
         final Vector3d position = this.joints[index + 1].position.clone().add(offset);
@@ -109,13 +109,13 @@ public final class Serpent implements Component<EntityStore> {
     }
 
     @Override
-    @SuppressWarnings("unchecked") // for initializing `segments` array which has generics (Ref<EntityStore>).
+    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
     public Component<EntityStore> clone() {
         final Serpent clone = new Serpent();
         clone.config = this.config;
         clone.configAssetId = clone.config.getId();
         clone.joints = new Joint[this.joints.length];
-        clone.segments = new Ref[this.segments.length];
+        clone.bones = new Ref[this.bones.length];
         for (int i = 0; i < this.joints.length; i++) {
             clone.joints[i] = this.joints[i].clone();
         }

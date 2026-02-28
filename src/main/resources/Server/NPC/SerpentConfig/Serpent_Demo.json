@@ -2,7 +2,7 @@
   "Head": "Serpent_Demo_Head",
   "Body": "Serpent_Demo_Body",
   "Tail": "Serpent_Demo_Tail",
-  "BodySegmentCount": [
+  "BodyBoneCount": [
     40,
     80
   ],

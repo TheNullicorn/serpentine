@@ -17,7 +17,7 @@ import com.hypixel.hytale.server.core.modules.entity.tracker.NetworkId;
 import com.hypixel.hytale.server.core.universe.world.chunk.WorldChunk;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.component.Serpent;
-import me.nullicorn.hytale.serpent.component.SerpentSegment;
+import me.nullicorn.hytale.serpent.component.SerpentBone;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -25,10 +25,10 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Runs each tick to update the transforms of {@link SerpentSegment} entities and spawn in new ones when they move into
+ * Runs each tick to update the transforms of {@link SerpentBone} entities and spawn in new ones when they move into
  * loaded chunks.
  */
-public final class SerpentSegmentLoadAndTransformSystem extends EntityTickingSystem<EntityStore> {
+public final class SerpentBoneLoadAndTransformSystem extends EntityTickingSystem<EntityStore> {
     @Nonnull
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
@@ -55,36 +55,36 @@ public final class SerpentSegmentLoadAndTransformSystem extends EntityTickingSys
         final Serpent serpent = archetypeChunk.getComponent(index, Serpent.getComponentType());
         assert serpent != null;
 
-        for (int i = 0; i < serpent.segments.length; i++) {
-            final Ref<EntityStore> segmentRef = serpent.segments[i];
-            if (segmentRef != null && segmentRef.isValid()) {
-                final TransformComponent transform = commandBuffer.getComponent(segmentRef, TransformComponent.getComponentType());
+        for (int i = 0; i < serpent.bones.length; i++) {
+            final Ref<EntityStore> boneRef = serpent.bones[i];
+            if (boneRef != null && boneRef.isValid()) {
+                final TransformComponent transform = commandBuffer.getComponent(boneRef, TransformComponent.getComponentType());
                 if (transform != null) {
-                    final Transform newTransform = serpent.getSegmentTransform(i);
+                    final Transform newTransform = serpent.getBoneTransform(i);
                     transform.setPosition(newTransform.getPosition());
                     transform.setRotation(newTransform.getRotation());
                 }
                 continue;
             }
-            final Transform transform = serpent.getSegmentTransform(i);
+            final Transform transform = serpent.getBoneTransform(i);
 
             final long chunkIndex = ChunkUtil.indexChunkFromBlock(transform.getPosition().x, transform.getPosition().z);
             final WorldChunk chunk = store.getExternalData().getWorld().getChunkIfLoaded(chunkIndex);
             if (chunk == null) {
-                // Don't spawn the segment if it's in an unloaded chunk.
+                // Don't spawn the bone if it's in an unloaded chunk.
                 continue;
             }
 
-            final Model model = Model.createUnitScaleModel(serpent.getSegmentConfig(i).getModel());
+            final Model model = Model.createUnitScaleModel(serpent.getBoneConfig(i).getModel());
             final Holder<EntityStore> holder = store.getRegistry().newHolder();
-            holder.addComponent(SerpentSegment.getComponentType(), new SerpentSegment(serpentRef, i));
+            holder.addComponent(SerpentBone.getComponentType(), new SerpentBone(serpentRef, i));
             holder.addComponent(NetworkId.getComponentType(), new NetworkId(store.getExternalData().takeNextNetworkId()));
             holder.addComponent(UUIDComponent.getComponentType(), UUIDComponent.randomUUID());
             holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(transform.getPosition(), transform.getRotation()));
             holder.addComponent(ModelComponent.getComponentType(), new ModelComponent(model));
             holder.addComponent(store.getRegistry().getNonSerializedComponentType(), NonSerialized.get());
-            // Spawn the segment and store its `Ref` inside the `Serpent`.
-            serpent.segments[i] = commandBuffer.addEntity(holder, AddReason.LOAD);
+            // Spawn the bone and store its `Ref` inside the `Serpent`.
+            serpent.bones[i] = commandBuffer.addEntity(holder, AddReason.LOAD);
         }
     }
 }

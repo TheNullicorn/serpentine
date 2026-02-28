@@ -9,7 +9,7 @@ import com.hypixel.hytale.component.system.tick.EntityTickingSystem;
 import com.hypixel.hytale.server.core.modules.entity.system.UpdateLocationSystems;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.component.Serpent;
-import me.nullicorn.hytale.serpent.component.SerpentSegment;
+import me.nullicorn.hytale.serpent.component.SerpentBone;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -17,9 +17,9 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Runs each tick to remove {@link SerpentSegment} entities that are not part of a valid {@link Serpent}.
+ * Runs each tick to remove {@link SerpentBone} entities that are not part of a valid {@link Serpent}.
  */
-public final class SerpentSegmentUnloadSystem extends EntityTickingSystem<EntityStore> {
+public final class SerpentBoneUnloadSystem extends EntityTickingSystem<EntityStore> {
     @Nonnull
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
@@ -32,7 +32,7 @@ public final class SerpentSegmentUnloadSystem extends EntityTickingSystem<Entity
     @Override
     public Query<EntityStore> getQuery() {
         return Query.and(
-            SerpentSegment.getComponentType(),
+            SerpentBone.getComponentType(),
             Query.not(Serpent.getComponentType())
         );
     }
@@ -45,21 +45,21 @@ public final class SerpentSegmentUnloadSystem extends EntityTickingSystem<Entity
         @Nonnull final Store<EntityStore> store,
         @Nonnull final CommandBuffer<EntityStore> commandBuffer
     ) {
-        final Ref<EntityStore> segmentRef = archetypeChunk.getReferenceTo(index);
-        final SerpentSegment segment = archetypeChunk.getComponent(index, SerpentSegment.getComponentType());
-        assert segment != null;
+        final Ref<EntityStore> boneRef = archetypeChunk.getReferenceTo(index);
+        final SerpentBone bone = archetypeChunk.getComponent(index, SerpentBone.getComponentType());
+        assert bone != null;
 
         // Validate the `serpent` ref and the lower bound of `index`.
-        if (segment.index >= 0 && segment.serpent != null && segment.serpent.isValid()) {
-            final Serpent serpent = commandBuffer.getComponent(segment.serpent, Serpent.getComponentType());
-            // Validate the upper bound of `index` and that the serpent contains the segment.
-            if (serpent != null && segment.index < serpent.segments.length && serpent.segments[segment.index].equals(segmentRef)) {
-                // Segment and serpent have a valid relationship. Don't remove.
+        if (bone.index >= 0 && bone.serpent != null && bone.serpent.isValid()) {
+            final Serpent serpent = commandBuffer.getComponent(bone.serpent, Serpent.getComponentType());
+            // Validate the upper bound of `index` and that the serpent contains the bone.
+            if (serpent != null && bone.index < serpent.bones.length && serpent.bones[bone.index].equals(boneRef)) {
+                // Bone has a valid relationship with the serpent. Don't remove.
                 return;
             }
         }
 
-        // Remove the stray segment.
-        commandBuffer.removeEntity(segmentRef, RemoveReason.UNLOAD);
+        // Remove the stray bone.
+        commandBuffer.removeEntity(boneRef, RemoveReason.UNLOAD);
     }
 }

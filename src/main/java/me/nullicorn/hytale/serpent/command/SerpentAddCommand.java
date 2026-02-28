@@ -38,10 +38,10 @@ public final class SerpentAddCommand extends AbstractPlayerCommand {
             SERPENT_ASSET_ARG_TYPE
         );
 
-    private final OptionalArg<Integer> segmentCountArg =
+    private final OptionalArg<Integer> boneCountArg =
         this.withOptionalArg(
-            "segments",
-            "server.commands.serpent.add.segments.desc",
+            "bones",
+            "server.commands.serpent.add.bones.desc",
             ArgTypes.INTEGER
         );
 
@@ -59,18 +59,18 @@ public final class SerpentAddCommand extends AbstractPlayerCommand {
     ) {
         final SerpentConfig config = context.get(this.serpentConfigArg);
 
-        final int segmentCount = Objects.requireNonNullElseGet(
-            context.get(this.segmentCountArg),
+        final int boneCount = Objects.requireNonNullElseGet(
+            context.get(this.boneCountArg),
             () -> {
-                final IntRange range = config.getBodySegmentCount();
+                final IntRange range = config.getBodyBoneCount();
                 return RandomExtra.randomRange(range.getInclusiveMin(), range.getInclusiveMax());
             });
-        if (segmentCount < 0) {
-            context.sendMessage(Message.translation("server.commands.serpent.arg.segments.error.mustBeAtLeastZero"));
+        if (boneCount < 0) {
+            context.sendMessage(Message.translation("server.commands.serpent.bones.mustBeAtLeastZero"));
             return;
         }
 
-        final Vector3d[] joints = new Vector3d[segmentCount + 1];
+        final Vector3d[] joints = new Vector3d[boneCount + 1];
         double distance = 0;
         for (int i = 0; i < joints.length; i++) {
             joints[i] = playerRef.getTransform().getPosition().clone().add(0, 0, -distance);

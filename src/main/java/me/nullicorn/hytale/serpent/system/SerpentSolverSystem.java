@@ -65,8 +65,8 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
         predictions[0] = serpent.target.clone();
 
         for (int i = 1; i < serpent.joints.length; i++) {
-            // Get how long this segment is intended to be.
-            final double length = serpent.getSegmentConfig(i - 1).getLength();
+            // Get how long this bone is intended to be.
+            final double length = serpent.getBoneConfig(i - 1).getLength();
             if (length == 0.0) {
                 predictions[i] = predictions[i - 1].clone();
             } else {
@@ -85,7 +85,7 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
 
                     predictions[i] = predictions[i - 1].clone().add(dirIn.clone().scale(length));
                 } else {
-                    // Get how long the segment is currently.
+                    // Get how long the bone is currently.
                     final double distance = predictions[i].distanceTo(predictions[i - 1]);
                     final double correction = length / distance;
                     // Lerp `predictions[i]` toward `predictions[i-1]` by `correction`.
