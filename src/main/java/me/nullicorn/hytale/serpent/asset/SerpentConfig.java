@@ -104,9 +104,6 @@ public final class SerpentConfig implements JsonAssetWithMap<String, DefaultAsse
             serpentConfig.head = SerpentBoneConfig.getAssetMap().getAsset(serpentConfig.headAssetId);
             serpentConfig.body = SerpentBoneConfig.getAssetMap().getAsset(serpentConfig.bodyAssetId);
             serpentConfig.tail = SerpentBoneConfig.getAssetMap().getAsset(serpentConfig.tailAssetId);
-            assert serpentConfig.head != null;
-            assert serpentConfig.body != null;
-            assert serpentConfig.tail != null;
         })
         .build();
 

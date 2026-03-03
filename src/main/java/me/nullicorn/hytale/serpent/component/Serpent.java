@@ -46,7 +46,6 @@ public final class Serpent implements Component<EntityStore> {
         .add()
         .afterDecode(serpent -> {
             serpent.config = SerpentConfig.getAssetMap().getAsset(serpent.configAssetId);
-            assert serpent.config != null;
             serpent.resetPath();
         })
         .build();
