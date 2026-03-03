@@ -53,26 +53,41 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
         serpent.joints[0].position.assign(serpent.target);
         serpent.path.addFirst(serpent.target.clone());
 
-        int lastPathIndex = 0;
-        double offset = 0;
-        for (int i = 1; i < serpent.joints.length; i++) {
-            offset += serpent.getBoneConfig(i - 1).getLength();
+        // FIXME: When bones move backward (when the head backtracks) bones that reach the tail get compressed into its
+        //        position. Implement some form of extrapolation on `path` so that the tail bone can go backward.
 
-            double distanceLeft = offset;
-            for (int p = 0; p < serpent.path.size() - 1; p++) {
-                lastPathIndex = Math.max(lastPathIndex, p + 1);
-                final double segmentLength = serpent.path.get(p).distanceTo(serpent.path.get(p + 1));
-                if (segmentLength >= distanceLeft) {
-                    final Vector3d segmentDirection = serpent.path.get(p + 1).clone().subtract(serpent.path.get(p)).scale(1 / segmentLength);
-                    serpent.joints[i].position.assign(serpent.path.get(p).clone().add(segmentDirection.clone().scale(distanceLeft)));
+        int pathIndex = 0;
+        double remainder = 0.0;
+
+        for (int i = 1; i < serpent.joints.length; i++) {
+            final double boneLength = serpent.getBoneConfig(i - 1).getLength();
+
+            // Account for how far along the path segment the previous joint left off.
+            double distLeft = remainder + boneLength;
+            for (; pathIndex < serpent.path.size() - 1; pathIndex++) {
+                final Vector3d thisPathNode = serpent.path.get(pathIndex);
+                final Vector3d nextPathNode = serpent.path.get(pathIndex + 1);
+                final Vector3d pathSegment = nextPathNode.clone().subtract(thisPathNode);
+                final double pathSegmentLength = pathSegment.length();
+                // See if the joint should be placed along this path segment.
+                if (pathSegmentLength > distLeft) {
+                    // Normalize `pathSegment`.
+                    final Vector3d pathSegmentDirection = pathSegment.clone().scale(1 / pathSegmentLength);
+                    // Interpolate the joint along the segment.
+                    serpent.joints[i].position.assign(thisPathNode.clone().add(pathSegmentDirection.clone().scale(distLeft)));
+                    // Save how far into the segment we left off so that the next joint can continue from there.
+                    remainder = distLeft;
+                    // Next joint!
                     break;
                 }
-                distanceLeft -= segmentLength;
+                // Next path segment!
+                distLeft -= pathSegmentLength;
             }
         }
 
-        if (lastPathIndex < serpent.path.size() - 1) {
-            serpent.path.subList(lastPathIndex + 1, serpent.path.size()).clear();
+        // Remove path nodes that the tail bone has gone past.
+        if (pathIndex < serpent.path.size() - 2) {
+            serpent.path.subList(pathIndex + 2, serpent.path.size()).clear();
         }
     }
 }
