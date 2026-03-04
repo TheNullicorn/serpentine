@@ -10,6 +10,7 @@ import com.hypixel.hytale.math.util.ChunkUtil;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.entity.UUIDComponent;
+import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.ModelComponent;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.modules.entity.system.UpdateLocationSystems;
@@ -57,17 +58,13 @@ public final class SerpentBoneLoadAndTransformSystem extends EntityTickingSystem
 
         for (int boneIndex = 0; boneIndex < serpent.bones.length; boneIndex++) {
             final Ref<EntityStore> boneRef = serpent.bones[boneIndex];
+            final Transform boneTransform = serpent.getBoneTransform(boneIndex);
+
             if (boneRef != null && boneRef.isValid()) {
-                final TransformComponent transform = commandBuffer.getComponent(boneRef, TransformComponent.getComponentType());
-                if (transform != null) {
-                    final Transform newTransform = serpent.getBoneTransform(boneIndex);
-                    transform.setPosition(newTransform.getPosition());
-                    transform.setRotation(newTransform.getRotation());
-                }
+                moveBone(boneIndex, boneRef, boneTransform, commandBuffer);
                 continue;
             }
 
-            final Transform boneTransform = serpent.getBoneTransform(boneIndex);
             if (boneTransform.getPosition().y < -32) {
                 // Don't spawn the bone if it's below the world. See UpdateLocationSystems#updateLocation for reference.
                 continue;
@@ -101,5 +98,25 @@ public final class SerpentBoneLoadAndTransformSystem extends EntityTickingSystem
         holder.addComponent(componentAccessor.getExternalData().getStore().getRegistry().getNonSerializedComponentType(), NonSerialized.get());
         // Spawn the bone and store its `Ref` inside the `Serpent`.
         serpent.bones[boneIndex] = componentAccessor.addEntity(holder, AddReason.LOAD);
+    }
+
+    private static void moveBone(
+        final int boneIndex,
+        final Ref<EntityStore> boneRef,
+        final Transform boneTransform,
+        final ComponentAccessor<EntityStore> componentAccessor
+    ) {
+        final TransformComponent boneTransformComponent = componentAccessor.getComponent(boneRef, TransformComponent.getComponentType());
+        if (boneTransformComponent != null) {
+            boneTransformComponent.getPosition().assign(boneTransform.getPosition());
+            boneTransformComponent.getRotation().assign(boneTransform.getRotation());
+        }
+
+        @Nullable final HeadRotation boneHeadRotationComponent = boneIndex == 0
+            ? componentAccessor.getComponent(boneRef, HeadRotation.getComponentType())
+            : null;
+        if (boneHeadRotationComponent != null) {
+            boneHeadRotationComponent.getRotation().assign(boneTransform.getRotation());
+        }
     }
 }
