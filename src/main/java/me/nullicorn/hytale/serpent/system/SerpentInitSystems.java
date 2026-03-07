@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.system.RefChangeSystem;
 import com.hypixel.hytale.component.system.RefSystem;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
+import com.hypixel.hytale.math.vector.Vector3f;
 import com.hypixel.hytale.server.core.asset.type.model.config.Model;
 import com.hypixel.hytale.server.core.cosmetics.CosmeticsModule;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
@@ -67,7 +68,7 @@ public final class SerpentInitSystems {
             final TransformComponent actualTransform = holder.getComponent(TransformComponent.getComponentType());
             if (actualTransform == null) {
                 // Entity doesn't have a transform of its own, so give it the serpent's head transform.
-                holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(headTransform.getPosition(), headTransform.getRotation()));
+                holder.addComponent(TransformComponent.getComponentType(), new TransformComponent(headTransform.getPosition(), new Vector3f()));
             } else {
                 // Entity already has a transform. Move the entire serpent to that position.
                 final Vector3d difference = headTransform.getPosition().clone().subtract(actualTransform.getPosition());
@@ -76,8 +77,13 @@ public final class SerpentInitSystems {
                         joint.position.add(difference);
                     }
                 }
-                // Ignore the existing rotation. Replace it with our head rotation.
-                actualTransform.setRotation(headTransform.getRotation());
+            }
+
+            final HeadRotation headRotation = holder.getComponent(HeadRotation.getComponentType());
+            if (headRotation == null) {
+                holder.addComponent(HeadRotation.getComponentType(), new HeadRotation(headTransform.getRotation()));
+            } else {
+                headRotation.setRotation(headTransform.getRotation());
             }
         }
 
