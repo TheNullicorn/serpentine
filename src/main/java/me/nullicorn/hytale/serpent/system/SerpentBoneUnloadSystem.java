@@ -53,7 +53,7 @@ public final class SerpentBoneUnloadSystem extends EntityTickingSystem<EntitySto
         if (bone.index >= 0 && bone.serpent != null && bone.serpent.isValid()) {
             final Serpent serpent = commandBuffer.getComponent(bone.serpent, Serpent.getComponentType());
             // Validate the upper bound of `index` and that the serpent contains the bone.
-            if (serpent != null && bone.index < serpent.bones.length && serpent.bones[bone.index].equals(boneRef)) {
+            if (serpent != null && bone.index < serpent.bones.length && boneRef.equals(serpent.bones[bone.index])) {
                 // Bone has a valid relationship with the serpent. Don't remove.
                 return;
             }
