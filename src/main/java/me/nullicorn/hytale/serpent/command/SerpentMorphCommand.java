@@ -35,6 +35,13 @@ public final class SerpentMorphCommand extends AbstractPlayerCommand {
             ArgTypes.INTEGER
         );
 
+    private final OptionalArg<Double> scaleArg =
+        this.withOptionalArg(
+            "scale",
+            "server.commands.serpent.add.scale.desc",
+            ArgTypes.DOUBLE
+        );
+
     public SerpentMorphCommand() {
         super("morph", "server.commands.serpent.morph.desc");
         this.addSubCommand(new SerpentMorphResetCommand());
@@ -48,8 +55,16 @@ public final class SerpentMorphCommand extends AbstractPlayerCommand {
         @Nonnull final PlayerRef playerRef,
         @Nonnull final World world
     ) {
-        // TODO: Almost identical to SerpentAddCommand. Move this shared code elsewhere.
+        // TODO: Almost identical to SerpentMorphCommand. Move this shared code elsewhere.
         final SerpentConfig config = context.get(this.serpentConfigArg);
+        final double scale = context.provided(this.scaleArg)
+            ? context.get(this.scaleArg)
+            : 1.0;
+
+        if (scale <= 0) {
+            context.sendMessage(Message.translation("server.commands.serpent.scale.mustBeGreaterThanZero"));
+            return;
+        }
 
         final int boneCount = Objects.requireNonNullElseGet(
             context.get(this.boneCountArg),
@@ -67,14 +82,14 @@ public final class SerpentMorphCommand extends AbstractPlayerCommand {
         for (int i = 0; i < joints.length; i++) {
             joints[i] = playerRef.getTransform().getPosition().clone().add(0, 0, -distance);
             if (i == 0) {
-                distance += config.getHead().getLength();
+                distance += config.getHead().getLength() * scale;
             } else if (i < joints.length - 2) {
-                distance += config.getBody().getLength();
+                distance += config.getBody().getLength() * scale;
             } else {
-                distance += config.getTail().getLength();
+                distance += config.getTail().getLength() * scale;
             }
         }
 
-        store.putComponent(ref, Serpent.getComponentType(), new Serpent(joints, config));
+        store.putComponent(ref, Serpent.getComponentType(), new Serpent(joints, config, scale));
     }
 }

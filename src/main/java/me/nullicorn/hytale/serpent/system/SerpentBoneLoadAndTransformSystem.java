@@ -91,7 +91,7 @@ public final class SerpentBoneLoadAndTransformSystem extends EntityTickingSystem
         final Ref<EntityStore> serpentRef,
         final ComponentAccessor<EntityStore> componentAccessor
     ) {
-        final Model model = Model.createUnitScaleModel(serpent.getBoneConfig(boneIndex).getModel());
+        final Model model = Model.createScaledModel(serpent.getBoneConfig(boneIndex).getModel(), (float) serpent.scale);
         final Holder<EntityStore> holder = componentAccessor.getExternalData().getStore().getRegistry().newHolder();
         holder.addComponent(SerpentBone.getComponentType(), new SerpentBone(serpentRef, boneIndex));
         holder.addComponent(NetworkId.getComponentType(), new NetworkId(componentAccessor.getExternalData().takeNextNetworkId()));

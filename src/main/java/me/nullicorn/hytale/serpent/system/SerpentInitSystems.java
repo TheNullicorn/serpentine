@@ -29,7 +29,7 @@ public final class SerpentInitSystems {
     ) {
         serpent.bones[0] = ref;
 
-        final Model headModel = Model.createUnitScaleModel(serpent.getBoneConfig(0).getModel());
+        final Model headModel = Model.createScaledModel(serpent.getBoneConfig(0).getModel(), (float) serpent.scale);
         componentAccessor.putComponent(ref, ModelComponent.getComponentType(), new ModelComponent(headModel));
 
         if (componentAccessor.getComponent(ref, NetworkId.getComponentType()) == null) {

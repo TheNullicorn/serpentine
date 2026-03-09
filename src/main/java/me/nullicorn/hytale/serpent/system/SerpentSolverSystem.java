@@ -55,7 +55,7 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
         final TransformComponent headTransform = archetypeChunk.getComponent(index, TransformComponent.getComponentType());
         final HeadRotation headRotation = archetypeChunk.getComponent(index, HeadRotation.getComponentType());
         if (headTransform != null && headRotation != null) {
-            final Vector3d offset = headRotation.getDirection().scale(serpent.getBoneConfig(0).getLength() / 2);
+            final Vector3d offset = headRotation.getDirection().scale(serpent.getBoneLength(0) / 2);
             // Move the first joint to the front of the head.
             predictions[0].assign(headTransform.getPosition().clone().add(offset));
             // Move the second joint to the rear of the head.
@@ -64,7 +64,7 @@ public final class SerpentSolverSystem extends EntityTickingSystem<EntityStore> 
 
         for (int i = 2; i < predictions.length; i++) {
             // Get how long this bone is intended to be.
-            final double length = serpent.getBoneConfig(i - 1).getLength();
+            final double length = serpent.getBoneLength(i - 1);
             if (length == 0.0) {
                 predictions[i] = predictions[i - 1].clone();
             } else {

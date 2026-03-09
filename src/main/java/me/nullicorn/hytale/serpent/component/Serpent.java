@@ -33,6 +33,12 @@ public final class Serpent implements Component<EntityStore> {
         .addValidator(SerpentConfig.VALIDATOR_CACHE.getValidator())
         .add()
         .append(
+            new KeyedCodec<>("Scale", Codec.DOUBLE, false),
+            (serpent, s) -> serpent.scale = s,
+            (serpent) -> serpent.scale
+        )
+        .add()
+        .append(
             new KeyedCodec<>("Joints", new ArrayCodec<>(Joint.CODEC, Joint[]::new), true),
             (serpent, s) -> {
                 serpent.joints = s;
@@ -51,6 +57,7 @@ public final class Serpent implements Component<EntityStore> {
 
     private String configAssetId;
     public Joint[] joints;
+    public double scale = 1.0;
 
     private SerpentConfig config;
     public Ref<EntityStore>[] bones;
@@ -63,11 +70,16 @@ public final class Serpent implements Component<EntityStore> {
     private Serpent() {
     }
 
-    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
     public Serpent(final Vector3d[] joints, final SerpentConfig config) {
+        this(joints, config, 1.0);
+    }
+
+    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
+    public Serpent(final Vector3d[] joints, final SerpentConfig config, final double scale) {
         if (joints.length < 2) {
             throw new IllegalArgumentException("joints must have at least 2 elements");
         }
+        this.scale = scale;
         this.config = config;
         this.configAssetId = this.config.getId();
         this.joints = new Joint[joints.length];
@@ -109,7 +121,7 @@ public final class Serpent implements Component<EntityStore> {
         }
 
         final Vector3d direction = this.joints[index].position.clone().subtract(this.joints[index + 1].position).normalize();
-        final double length = this.getBoneConfig(index).getLength();
+        final double length = this.getBoneLength(index);
 
         final Vector3d offset = direction.clone().scale(length / 2.0);
         final Vector3d position = this.joints[index + 1].position.clone().add(offset);
@@ -119,6 +131,10 @@ public final class Serpent implements Component<EntityStore> {
         rotation.setYaw((float) (Math.atan2(direction.x, direction.z) + Math.PI));
 
         return new Transform(position, rotation);
+    }
+
+    public double getBoneLength(final int index) {
+        return this.getBoneConfig(index).getLength() * this.scale;
     }
 
     @Override
