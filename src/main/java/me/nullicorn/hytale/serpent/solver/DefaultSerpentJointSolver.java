@@ -46,6 +46,16 @@ public final class DefaultSerpentJointSolver implements SerpentJointSolver {
         this.solveJoints(serpent);
     }
 
+    @Override
+    public SerpentJointSolver clone() {
+        final DefaultSerpentJointSolver clone = new DefaultSerpentJointSolver();
+        for (final Vector3d node : this.guideRail) {
+            clone.guideRail.add(node.clone());
+        }
+        clone.nodeSpacing = this.nodeSpacing;
+        return clone;
+    }
+
     private void recalculateNodeSpacing(final Serpent serpent) {
         double minLength = Double.POSITIVE_INFINITY;
         for (int i = 0; i < serpent.bones().size(); i++) {

@@ -45,4 +45,9 @@ public final class DefaultSerpentBoneSolver implements SerpentBoneSolver {
             }
         }
     }
+
+    @Override
+    public SerpentBoneSolver clone() {
+        return new DefaultSerpentBoneSolver();
+    }
 }

@@ -13,4 +13,6 @@ public interface SerpentBoneSolver {
 
     default void init(final Serpent serpent) {
     }
+
+    SerpentBoneSolver clone();
 }

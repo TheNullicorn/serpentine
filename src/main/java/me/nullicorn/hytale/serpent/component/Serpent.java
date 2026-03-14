@@ -166,10 +166,24 @@ public final class Serpent implements Component<EntityStore> {
         }
     }
 
-    @Nullable
     @Override
     public Component<EntityStore> clone() {
-        return null; // TODO
+        final Serpent clone = new Serpent();
+        for (final Joint joint : this.joints) {
+            clone.joints.add(joint.clone());
+        }
+        for (final Bone bone : this.bones) {
+            final Bone boneClone = bone.clone();
+            boneClone.ref = null;
+            clone.bones.add(boneClone);
+        }
+        if (this.jointSolver != null) {
+            clone.jointSolver = this.jointSolver.clone();
+        }
+        if (this.boneSolver != null) {
+            clone.boneSolver = this.boneSolver.clone();
+        }
+        return clone;
     }
 
     public static final class Joint {
@@ -302,6 +316,18 @@ public final class Serpent implements Component<EntityStore> {
 
         public void setAutoSpawn(final boolean autoSpawn) {
             this.autoSpawn = autoSpawn;
+        }
+
+        @Override
+        public Bone clone() {
+            final Bone clone = new Bone();
+            clone.ref = this.ref;
+            clone.model = this.model;
+            clone.transform = this.transform.clone();
+            clone.baseLength = this.baseLength;
+            clone.scale = this.scale;
+            clone.autoSpawn = this.autoSpawn;
+            return clone;
         }
     }
 }

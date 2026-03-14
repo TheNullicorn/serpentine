@@ -29,9 +29,8 @@ public final class SerpentBone implements Component<EntityStore> {
         return this.index;
     }
 
-    @Nullable
     @Override
     public Component<EntityStore> clone() {
-        return null;
+        return new SerpentBone(this.serpent, this.index);
     }
 }

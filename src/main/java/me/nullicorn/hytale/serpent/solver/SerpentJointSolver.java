@@ -18,4 +18,6 @@ public interface SerpentJointSolver {
 
     default void init(final Serpent serpent) {
     }
+
+    SerpentJointSolver clone();
 }
