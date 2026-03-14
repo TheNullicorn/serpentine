@@ -5,7 +5,6 @@ import com.hypixel.hytale.assetstore.AssetKeyValidator;
 import com.hypixel.hytale.assetstore.AssetRegistry;
 import com.hypixel.hytale.assetstore.AssetStore;
 import com.hypixel.hytale.assetstore.codec.AssetBuilderCodec;
-import com.hypixel.hytale.assetstore.codec.ContainedAssetCodec;
 import com.hypixel.hytale.assetstore.map.DefaultAssetMap;
 import com.hypixel.hytale.assetstore.map.JsonAssetWithMap;
 import com.hypixel.hytale.codec.Codec;
@@ -13,6 +12,8 @@ import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.validation.ValidatorCache;
 import com.hypixel.hytale.codec.validation.Validators;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
+
+import javax.annotation.Nullable;
 
 public final class SerpentBoneConfig implements JsonAssetWithMap<String, DefaultAssetMap<String, SerpentBoneConfig>> {
     public static final String PATH = "NPC/SerpentBoneConfig";
@@ -41,24 +42,32 @@ public final class SerpentBoneConfig implements JsonAssetWithMap<String, Default
             serpentBoneConfig -> serpentBoneConfig.length,
             (serpentBoneConfig, parent) -> serpentBoneConfig.length = parent.length
         )
+        .documentation("Distance between the two ends of the bone")
         .addValidator(Validators.nonNull())
-        .addValidator(Validators.min(0.0d))
+        .addValidator(Validators.greaterThan(0.0))
         .add()
-        .afterDecode(serpentBoneConfig -> serpentBoneConfig.model = ModelAsset.getAssetMap().getAsset(serpentBoneConfig.modelAssetId))
+        .afterDecode(serpentBoneConfig -> {
+            if (serpentBoneConfig.modelAssetId != null) {
+                serpentBoneConfig.model = ModelAsset.getAssetMap().getAsset(serpentBoneConfig.modelAssetId);
+            }
+        })
         .build();
-
-    public static final Codec<String> CHILD_ASSET_CODEC = new ContainedAssetCodec<>(SerpentBoneConfig.class, CODEC);
 
     public static final ValidatorCache<String> VALIDATOR_CACHE =
         new ValidatorCache<>(new AssetKeyValidator<>(SerpentBoneConfig::getAssetStore));
 
     private static AssetStore<String, SerpentBoneConfig, DefaultAssetMap<String, SerpentBoneConfig>> ASSET_STORE;
 
+    // Metadata fields.
     private String id;
     private AssetExtraInfo.Data extraData;
+
+    // Serialized fields.
     private String modelAssetId;
     private double length;
 
+    // Non-serialized fields.
+    @Nullable
     private ModelAsset model;
 
     public static AssetStore<String, SerpentBoneConfig, DefaultAssetMap<String, SerpentBoneConfig>> getAssetStore() {
@@ -77,11 +86,12 @@ public final class SerpentBoneConfig implements JsonAssetWithMap<String, Default
         return this.id;
     }
 
-    public ModelAsset getModel() {
+    @Nullable
+    public ModelAsset model() {
         return this.model;
     }
 
-    public double getLength() {
+    public double length() {
         return this.length;
     }
 }

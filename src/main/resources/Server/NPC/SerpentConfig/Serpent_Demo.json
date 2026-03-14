@@ -1,13 +1,41 @@
 {
-  "Head": "Serpent_Demo_Head",
-  "Body": "Serpent_Demo_Body",
-  "Tail": "Serpent_Demo_Tail",
-  "BodyBoneCount": [
-    40,
-    80
-  ],
-  "DefaultHardDampingSpeed": 0.0,
-  "DefaultSoftDampingSpeed": 0.0,
-  "DefaultSoftDampingCoefficient": 0.0,
-  "DefaultSoftAngleLimit": 20
+  "Layout": {
+    "Type": "Sequence",
+    "Sequence": [
+      {
+        "Type": "Bone",
+        "BoneConfig": "Serpent_Demo_Head"
+      },
+      {
+        "Type": "Repeat",
+        "Count": [
+          9,
+          9
+        ],
+        "Node": {
+          "Type": "Bone",
+          "BoneConfig": "Serpent_Demo_Body"
+        }
+      },
+      {
+        "Type": "Bone",
+        "BoneConfig": "Serpent_Demo_Body_Arms"
+      },
+      {
+        "Type": "Repeat",
+        "Count": [
+          30,
+          70
+        ],
+        "Node": {
+          "Type": "Bone",
+          "BoneConfig": "Serpent_Demo_Body"
+        }
+      },
+      {
+        "Type": "Bone",
+        "BoneConfig": "Serpent_Demo_Tail"
+      }
+    ]
+  }
 }

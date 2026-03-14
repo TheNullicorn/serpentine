@@ -10,164 +10,298 @@ import com.hypixel.hytale.component.ComponentType;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.math.vector.Vector3d;
-import com.hypixel.hytale.math.vector.Vector3f;
+import com.hypixel.hytale.server.core.asset.type.model.config.Model;
+import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.SerpentPlugin;
 import me.nullicorn.hytale.serpent.asset.SerpentBoneConfig;
-import me.nullicorn.hytale.serpent.asset.SerpentConfig;
+import me.nullicorn.hytale.serpent.asset.SerpentLayoutBone;
+import me.nullicorn.hytale.serpent.solver.DefaultSerpentBoneSolver;
+import me.nullicorn.hytale.serpent.solver.DefaultSerpentJointSolver;
+import me.nullicorn.hytale.serpent.solver.SerpentBoneSolver;
+import me.nullicorn.hytale.serpent.solver.SerpentJointSolver;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public final class Serpent implements Component<EntityStore> {
     public static final String ID = "Serpent";
 
-    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
     public static final BuilderCodec<Serpent> CODEC = BuilderCodec.builder(Serpent.class, Serpent::new)
         .append(
-            new KeyedCodec<>("Config", Codec.STRING, true),
-            (serpent, s) -> serpent.configAssetId = s,
-            (serpent) -> serpent.configAssetId
-        )
-        .addValidator(Validators.nonNull())
-        .addValidator(SerpentConfig.VALIDATOR_CACHE.getValidator())
-        .add()
-        .append(
-            new KeyedCodec<>("Scale", Codec.DOUBLE, false),
-            (serpent, s) -> serpent.scale = s,
-            (serpent) -> serpent.scale
-        )
-        .add()
-        .append(
             new KeyedCodec<>("Joints", new ArrayCodec<>(Joint.CODEC, Joint[]::new), true),
-            (serpent, s) -> {
-                serpent.joints = s;
-                serpent.bones = new Ref[serpent.joints.length - 1];
-            },
-            (serpent) -> serpent.joints
+            (o, s) -> o.joints.addAll(Arrays.asList(s)),
+            (o) -> o.joints.toArray(new Joint[0])
         )
         .addValidator(Validators.nonNull())
-        .addValidator(Validators.arraySizeRange(2, Integer.MAX_VALUE))
+        .addValidator(Validators.arraySizeRange(2, Integer.MAX_VALUE)) // Need 2 joints per bone, and at least 1 bone.
+        .add()
+        .append(
+            new KeyedCodec<>("Bones", new ArrayCodec<>(Bone.CODEC, Bone[]::new), true),
+            (o, s) -> o.bones.addAll(Arrays.asList(s)),
+            (o) -> o.bones.toArray(new Bone[0])
+        )
+        .addValidator(Validators.nonNull())
+        .addValidator(Validators.nonEmptyArray()) // Need at least 1 bone (the head)
+        .add()
+        .append(
+            new KeyedCodec<>("JointSolver", SerpentJointSolver.CODEC, false),
+            (o, s) -> o.jointSolver = s,
+            (o) -> o.jointSolver
+        )
+        .add()
+        .append(
+            new KeyedCodec<>("BoneSolver", SerpentBoneSolver.CODEC, false),
+            (o, s) -> o.boneSolver = s,
+            (o) -> o.boneSolver
+        )
         .add()
         .afterDecode(serpent -> {
-            if (serpent.configAssetId != null) {
-                serpent.config = SerpentConfig.getAssetMap().getAsset(serpent.configAssetId);
+            if (serpent.jointSolver != null) {
+                serpent.jointSolver.init(serpent);
+            }
+            if (serpent.boneSolver != null) {
+                serpent.boneSolver.init(serpent);
             }
         })
         .build();
-
-    private String configAssetId;
-    public Joint[] joints;
-    public double scale = 1.0;
-
-    private SerpentConfig config;
-    public Ref<EntityStore>[] bones;
-    public List<Vector3d> guideRail = new ArrayList<>();
 
     public static ComponentType<EntityStore, Serpent> getComponentType() {
         return SerpentPlugin.get().getSerpentComponentType();
     }
 
+    private final List<Joint> joints = new ArrayList<>();
+    private final List<Bone> bones = new ArrayList<>();
+    @Nullable
+    private SerpentJointSolver jointSolver;
+    @Nullable
+    private SerpentBoneSolver boneSolver;
+
+    private final List<Joint> jointsUnmodifiable = Collections.unmodifiableList(this.joints);
+    private final List<Bone> bonesUnmodifiable = Collections.unmodifiableList(this.bones);
+
+    public Serpent(
+        final Transform headTransform,
+        final List<SerpentLayoutBone> bones
+    ) {
+        if (bones.isEmpty()) {
+            throw new IllegalArgumentException("Serpent requires at least 1 bone");
+        }
+
+        final SerpentLayoutBone headBone = bones.getFirst();
+        final SerpentBoneConfig headBoneConfig = headBone.boneConfig();
+
+        final Vector3d jointPosition = new Vector3d(headTransform.getPosition());
+        if (headBoneConfig != null) {
+            jointPosition.add(headBoneConfig.length() * headBone.scale() * 0.5);
+        }
+
+        this.joints.add(new Joint(jointPosition));
+
+        for (int i = 1; i <= bones.size(); i++) {
+            final Vector3d prevJointPosition = jointPosition.clone();
+
+            final SerpentLayoutBone layoutBone = bones.get(i - 1);
+            final SerpentBoneConfig boneConfig = layoutBone.boneConfig();
+            Model.ModelReference modelRef = null;
+            if (boneConfig != null) {
+                jointPosition.subtract(0, 0, boneConfig.length() * layoutBone.scale());
+
+                final ModelAsset modelAsset = boneConfig.model();
+                if (modelAsset != null) {
+                    modelRef = Model.createUnitScaleModel(modelAsset).toReference();
+                }
+            }
+
+            this.joints.add(new Joint(jointPosition));
+            this.bones.add(new Bone(modelRef, new Transform(prevJointPosition.add(jointPosition).scale(0.5)), boneConfig != null ? boneConfig.length() : 0.0, layoutBone.scale()));
+        }
+
+        this.setJointSolver(new DefaultSerpentJointSolver());
+        this.setBoneSolver(new DefaultSerpentBoneSolver());
+    }
+
     private Serpent() {
+        // Only intended for codec.
     }
 
-    public Serpent(final Vector3d[] joints, final SerpentConfig config) {
-        this(joints, config, 1.0);
+    /**
+     * @return an unmodifiable view of the serpent's joint list.
+     */
+    public List<Joint> joints() {
+        return this.jointsUnmodifiable;
     }
 
-    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
-    public Serpent(final Vector3d[] joints, final SerpentConfig config, final double scale) {
-        if (joints.length < 2) {
-            throw new IllegalArgumentException("joints must have at least 2 elements");
+    /**
+     * @return an unmodifiable view of the serpent's bone list.
+     */
+    public List<Bone> bones() {
+        return this.bonesUnmodifiable;
+    }
+
+    @Nullable
+    public SerpentJointSolver jointSolver() {
+        return this.jointSolver;
+    }
+
+    @Nullable
+    public SerpentBoneSolver boneSolver() {
+        return this.boneSolver;
+    }
+
+    public void setJointSolver(@Nullable final SerpentJointSolver jointSolver) {
+        this.jointSolver = jointSolver;
+        if (this.jointSolver != null) {
+            this.jointSolver.init(this);
         }
-        this.scale = scale;
-        this.config = config;
-        this.configAssetId = this.config.getId();
-        this.joints = new Joint[joints.length];
-        for (int i = 0; i < joints.length; i++) {
-            final Joint joint = new Joint();
-            joint.position.assign(joints[i]);
-            this.joints[i] = joint;
+    }
+
+    public void setBoneSolver(@Nullable final SerpentBoneSolver boneSolver) {
+        this.boneSolver = boneSolver;
+        if (this.boneSolver != null) {
+            this.boneSolver.init(this);
         }
-        this.bones = new Ref[this.joints.length - 1];
     }
 
-    public SerpentConfig getConfig() {
-        return this.config;
-    }
-
-    public void setConfig(final SerpentConfig config) {
-        this.config = config;
-        this.configAssetId = this.config.getId();
-    }
-
-    public SerpentBoneConfig getBoneConfig(final int index) {
-        if (index < 0 || index >= this.bones.length) {
-            throw new IndexOutOfBoundsException(index);
-        }
-        if (index == 0) {
-            return this.config.getHead();
-        }
-        if (index < this.bones.length - 1) {
-            return this.config.getBody();
-        }
-        return this.config.getTail();
-    }
-
-    public Transform getBoneTransform(final int index) {
-        if (index < 0 || index >= this.bones.length) {
-            throw new IndexOutOfBoundsException(index);
-        }
-
-        final Vector3d direction = this.joints[index].position.clone().subtract(this.joints[index + 1].position).normalize();
-        final double length = this.getBoneLength(index);
-
-        final Vector3d offset = direction.clone().scale(length / 2.0);
-        final Vector3d position = this.joints[index + 1].position.clone().add(offset);
-
-        final Vector3f rotation = new Vector3f();
-        rotation.setPitch((float) Math.asin(direction.y));
-        rotation.setYaw((float) (Math.atan2(direction.x, direction.z) + Math.PI));
-
-        return new Transform(position, rotation);
-    }
-
-    public double getBoneLength(final int index) {
-        return this.getBoneConfig(index).getLength() * this.scale;
-    }
-
+    @Nullable
     @Override
-    @SuppressWarnings("unchecked") // for initializing `bones` array which has generics (Ref<EntityStore>).
     public Component<EntityStore> clone() {
-        final Serpent clone = new Serpent();
-        clone.config = this.config;
-        clone.configAssetId = clone.config.getId();
-        clone.joints = new Joint[this.joints.length];
-        clone.bones = new Ref[this.bones.length];
-        for (int i = 0; i < this.joints.length; i++) {
-            clone.joints[i] = this.joints[i].clone();
-        }
-        return clone;
+        return null; // TODO
     }
 
-    public static final class Joint implements Cloneable {
-        public static final BuilderCodec<Joint> CODEC = BuilderCodec.builder(Joint.class, Joint::new)
+    public static final class Joint {
+        private static final BuilderCodec<Joint> CODEC = BuilderCodec.builder(Joint.class, Joint::new)
             .append(
                 new KeyedCodec<>("Position", Vector3d.CODEC, true),
-                (joint, s) -> joint.position.assign(s),
-                (joint) -> joint.position
+                (o, s) -> o.position.assign(s),
+                (o) -> o.position
             )
             .addValidator(Validators.nonNull())
             .add()
             .build();
 
-        public final Vector3d position = new Vector3d();
+        private final Vector3d position = new Vector3d();
+
+        private Joint(final Vector3d position) {
+            this.position.assign(position);
+        }
+
+        private Joint() {
+            // Only intended for codec.
+        }
+
+        public Vector3d position() {
+            return this.position;
+        }
 
         @Override
-        protected Joint clone() {
-            final Joint clone = new Joint();
-            clone.position.assign(this.position);
-            return clone;
+        public Joint clone() {
+            return new Joint(this.position);
+        }
+    }
+
+    public static final class Bone {
+        public static final BuilderCodec<Bone> CODEC = BuilderCodec.builder(Bone.class, Bone::new)
+            .append(
+                new KeyedCodec<>("Model", Model.ModelReference.CODEC, false),
+                (o, s) -> o.model = s,
+                (o) -> o.model
+            )
+            .add()
+            .append(
+                new KeyedCodec<>("BaseLength", Codec.DOUBLE, true),
+                (o, s) -> o.baseLength = s,
+                (o) -> o.baseLength
+            )
+            .addValidator(Validators.nonNull())
+            .add()
+            .append(
+                new KeyedCodec<>("Scale", Codec.DOUBLE, false),
+                (o, s) -> o.scale = s,
+                (o) -> o.scale
+            )
+            .addValidator(Validators.nonNull())
+            .add()
+            .append(
+                new KeyedCodec<>("AutoSpawn", Codec.BOOLEAN, false),
+                (o, s) -> o.autoSpawn = s,
+                (o) -> o.autoSpawn
+            )
+            .add()
+            .build();
+
+        @Nullable
+        private Ref<EntityStore> ref;
+        @Nullable
+        private Model.ModelReference model;
+        private Transform transform = new Transform();
+        private double baseLength;
+        private double scale = 1.0;
+        private boolean autoSpawn = true;
+
+        private Bone(
+            @Nullable final Model.ModelReference model,
+            final Transform transform,
+            final double baseLength,
+            final double scale
+        ) {
+            this.model = model;
+            this.transform = transform;
+            this.baseLength = baseLength;
+            this.scale = scale;
+        }
+
+        private Bone() {
+            // Only intended for codec.
+        }
+
+        @Nullable
+        public Ref<EntityStore> ref() {
+            return this.ref;
+        }
+
+        @Nullable
+        public Model.ModelReference model() {
+            return this.model;
+        }
+
+        public Transform transform() {
+            return this.transform;
+        }
+
+        public double baseLength() {
+            return this.baseLength;
+        }
+
+        public double scale() {
+            return this.scale;
+        }
+
+        public boolean isAutoSpawn() {
+            return this.autoSpawn;
+        }
+
+        public void setRef(@Nullable final Ref<EntityStore> ref) {
+            this.ref = ref;
+        }
+
+        public void setModel(@Nullable final Model.ModelReference model) {
+            this.model = model;
+        }
+
+        public void setBaseLength(final double baseLength) {
+            this.baseLength = baseLength;
+        }
+
+        public void setScale(final double scale) {
+            this.scale = scale;
+        }
+
+        public void setAutoSpawn(final boolean autoSpawn) {
+            this.autoSpawn = autoSpawn;
         }
     }
 }

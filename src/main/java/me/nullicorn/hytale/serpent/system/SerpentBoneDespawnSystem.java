@@ -12,14 +12,15 @@ import me.nullicorn.hytale.serpent.component.Serpent;
 import me.nullicorn.hytale.serpent.component.SerpentBone;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Set;
 
 /**
- * Runs each tick to remove {@link SerpentBone} entities that are not part of a valid {@link Serpent}.
+ * Runs each tick to despawn bones that aren't linked to a {@link Serpent} entity.
+ * <p>
+ * To keep a bone entity around without a valid {@link Serpent} reference, remove its {@link SerpentBone} component.
  */
-public final class SerpentBoneUnloadSystem extends EntityTickingSystem<EntityStore> {
+public final class SerpentBoneDespawnSystem extends EntityTickingSystem<EntityStore> {
     @Nonnull
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
@@ -28,7 +29,6 @@ public final class SerpentBoneUnloadSystem extends EntityTickingSystem<EntitySto
         );
     }
 
-    @Nullable
     @Override
     public Query<EntityStore> getQuery() {
         return Query.and(
@@ -46,20 +46,19 @@ public final class SerpentBoneUnloadSystem extends EntityTickingSystem<EntitySto
         @Nonnull final CommandBuffer<EntityStore> commandBuffer
     ) {
         final Ref<EntityStore> boneRef = archetypeChunk.getReferenceTo(index);
-        final SerpentBone bone = archetypeChunk.getComponent(index, SerpentBone.getComponentType());
-        assert bone != null;
+        final SerpentBone boneComponent = archetypeChunk.getComponent(index, SerpentBone.getComponentType());
+        assert boneComponent != null;
 
-        // Validate the `serpent` ref and the lower bound of `index`.
-        if (bone.index >= 0 && bone.serpent != null && bone.serpent.isValid()) {
-            final Serpent serpent = commandBuffer.getComponent(bone.serpent, Serpent.getComponentType());
-            // Validate the upper bound of `index` and that the serpent contains the bone.
-            if (serpent != null && bone.index < serpent.bones.length && boneRef.equals(serpent.bones[bone.index])) {
-                // Bone has a valid relationship with the serpent. Don't remove.
-                return;
+        if (boneComponent.index() >= 0 && boneComponent.serpent() != null && boneComponent.serpent().isValid()) {
+            final Serpent serpent = commandBuffer.getComponent(boneComponent.serpent(), Serpent.getComponentType());
+            if (serpent != null && boneComponent.index() < serpent.bones().size()) {
+                final Serpent.Bone bone = serpent.bones().get(boneComponent.index());
+                if (bone.ref() != null && bone.ref().equals(boneRef)) {
+                    return;
+                }
             }
         }
 
-        // Remove the stray bone.
-        commandBuffer.removeEntity(boneRef, RemoveReason.UNLOAD);
+        commandBuffer.removeEntity(boneRef, RemoveReason.REMOVE);
     }
 }

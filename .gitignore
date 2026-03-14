@@ -4,5 +4,13 @@
 # JetBrains IDE project settings
 .idea/
 
-# Hytale dev server
-devserver/
+# Gradle build directory
+build/
+
+# Hytale dev server (keep JVM options for enabling debugger and assertions)
+run/**
+!run/jvm.options
+
+# Hytale asset schemas (generated)
+src/main/resources/.vscode/
+src/main/resources/Schema/

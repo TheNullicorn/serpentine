@@ -1,27 +1,20 @@
 package me.nullicorn.hytale.serpent;
 
-import com.hypixel.hytale.assetstore.event.LoadedAssetsEvent;
 import com.hypixel.hytale.assetstore.map.DefaultAssetMap;
 import com.hypixel.hytale.component.ComponentType;
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.RemoveReason;
-import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.server.core.asset.HytaleAssetStore;
 import com.hypixel.hytale.server.core.asset.type.model.config.ModelAsset;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import me.nullicorn.hytale.serpent.asset.SerpentBoneConfig;
-import me.nullicorn.hytale.serpent.asset.SerpentConfig;
+import me.nullicorn.hytale.serpent.asset.*;
 import me.nullicorn.hytale.serpent.command.SerpentCommand;
-import me.nullicorn.hytale.serpent.component.Serpent;
-import me.nullicorn.hytale.serpent.component.SerpentBone;
-import me.nullicorn.hytale.serpent.system.SerpentBoneLoadAndTransformSystem;
-import me.nullicorn.hytale.serpent.system.SerpentBoneUnloadSystem;
-import me.nullicorn.hytale.serpent.system.SerpentInitSystems;
-import me.nullicorn.hytale.serpent.system.SerpentSolverSystem;
+import me.nullicorn.hytale.serpent.component.*;
+import me.nullicorn.hytale.serpent.solver.DefaultSerpentBoneSolver;
+import me.nullicorn.hytale.serpent.solver.DefaultSerpentJointSolver;
+import me.nullicorn.hytale.serpent.solver.SerpentBoneSolver;
+import me.nullicorn.hytale.serpent.solver.SerpentJointSolver;
+import me.nullicorn.hytale.serpent.system.*;
 
 import javax.annotation.Nonnull;
 
@@ -30,6 +23,9 @@ public final class SerpentPlugin extends JavaPlugin {
 
     private ComponentType<EntityStore, Serpent> serpentComponentType;
     private ComponentType<EntityStore, SerpentBone> serpentBoneComponentType;
+    private ComponentType<EntityStore, SerpentBoneAutoApplyScale> serpentBoneAutoApplyScaleComponentType;
+    private ComponentType<EntityStore, SerpentBoneAutoApplyModel> serpentBoneAutoApplyModelComponentType;
+    private ComponentType<EntityStore, SerpentBoneAutoApplyTransform> serpentBoneAutoApplyTransformComponentType;
 
     public static SerpentPlugin get() {
         return instance;
@@ -58,23 +54,29 @@ public final class SerpentPlugin extends JavaPlugin {
                 .loadsAfter(SerpentBoneConfig.class).build()
         );
 
+        SerpentLayoutNode.CODEC.register(SerpentLayoutBone.ID, SerpentLayoutBone.class, SerpentLayoutBone.CODEC);
+        SerpentLayoutNode.CODEC.register(SerpentLayoutSequence.ID, SerpentLayoutSequence.class, SerpentLayoutSequence.CODEC);
+        SerpentLayoutNode.CODEC.register(SerpentLayoutRepeater.ID, SerpentLayoutRepeater.class, SerpentLayoutRepeater.CODEC);
+
+        SerpentJointSolver.CODEC.register(DefaultSerpentJointSolver.ID, DefaultSerpentJointSolver.class, DefaultSerpentJointSolver.CODEC);
+        SerpentBoneSolver.CODEC.register(DefaultSerpentBoneSolver.ID, DefaultSerpentBoneSolver.class, DefaultSerpentBoneSolver.CODEC);
+
         this.serpentComponentType = this.getEntityStoreRegistry().registerComponent(Serpent.class, Serpent.ID, Serpent.CODEC);
-        this.serpentBoneComponentType = this.getEntityStoreRegistry().registerComponent(SerpentBone.class, SerpentBone::new);
+        this.serpentBoneComponentType = this.getEntityStoreRegistry().registerComponent(SerpentBone.class, () -> {
+            throw new UnsupportedOperationException("Not implemented");
+        });
+        this.serpentBoneAutoApplyScaleComponentType = this.getEntityStoreRegistry().registerComponent(SerpentBoneAutoApplyScale.class, SerpentBoneAutoApplyScale::get);
+        this.serpentBoneAutoApplyModelComponentType = this.getEntityStoreRegistry().registerComponent(SerpentBoneAutoApplyModel.class, SerpentBoneAutoApplyModel::get);
+        this.serpentBoneAutoApplyTransformComponentType = this.getEntityStoreRegistry().registerComponent(SerpentBoneAutoApplyTransform.class, SerpentBoneAutoApplyTransform::get);
 
-        // Systems for initializing `Serpent` entities.
-        this.getEntityStoreRegistry().registerSystem(new SerpentInitSystems.PreSpawnSystem());
-        this.getEntityStoreRegistry().registerSystem(new SerpentInitSystems.SpawnSystem());
-        this.getEntityStoreRegistry().registerSystem(new SerpentInitSystems.ChangeSystem());
-
-        // Systems for controlling `Serpent` internal states.
+        this.getEntityStoreRegistry().registerSystem(new SerpentHeadSpawnSystems.SpawnRefSystem());
+        this.getEntityStoreRegistry().registerSystem(new SerpentHeadSpawnSystems.SpawnRefChangeSystem());
         this.getEntityStoreRegistry().registerSystem(new SerpentSolverSystem());
-
-        // Systems for managing `SerpentBone` transforms and lifetimes.
-        this.getEntityStoreRegistry().registerSystem(new SerpentBoneLoadAndTransformSystem());
-        this.getEntityStoreRegistry().registerSystem(new SerpentBoneUnloadSystem());
-
-        // Asset hot reloading.
-        this.getEventRegistry().register(LoadedAssetsEvent.class, SerpentConfig.class, this::updateSerpentAssets);
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneSpawnSystem());
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneDespawnSystem());
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneApplyScaleSystem());
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneApplyModelSystem());
+        this.getEntityStoreRegistry().registerSystem(new SerpentBoneApplyTransformSystem());
 
         this.getCommandRegistry().registerCommand(new SerpentCommand());
     }
@@ -92,47 +94,15 @@ public final class SerpentPlugin extends JavaPlugin {
         return this.serpentBoneComponentType;
     }
 
-    /**
-     * Hot reloading support for {@link SerpentConfig}.
-     * <p>
-     * Handles {@link LoadedAssetsEvent} in order to update each {@link Serpent} when its {@link SerpentConfig} asset is
-     * reloaded.
-     */
-    private void updateSerpentAssets(final LoadedAssetsEvent<String, SerpentConfig, DefaultAssetMap<String, SerpentConfig>> event) {
-        // Look in each world for serpents.
-        for (final World world : Universe.get().getWorlds().values()) {
-            final Store<EntityStore> store = world.getEntityStore().getStore();
+    public ComponentType<EntityStore, SerpentBoneAutoApplyScale> getSerpentBoneAutoApplyScaleComponentType() {
+        return this.serpentBoneAutoApplyScaleComponentType;
+    }
 
-            // Schedule this block to be run in the `world` thread.
-            world.execute(() ->
-                store.forEachEntityParallel(Serpent.getComponentType(), (index, archetypeChunk, commandBuffer) -> {
-                    final Ref<EntityStore> serpentRef = archetypeChunk.getReferenceTo(index);
-                    final Serpent serpent = archetypeChunk.getComponent(index, Serpent.getComponentType());
-                    assert serpent != null;
+    public ComponentType<EntityStore, SerpentBoneAutoApplyModel> getSerpentBoneAutoApplyModelComponentType() {
+        return this.serpentBoneAutoApplyModelComponentType;
+    }
 
-                    final SerpentConfig newConfig = event.getLoadedAssets().get(serpent.getConfig().getId());
-                    if (newConfig == null) {
-                        // This serpent's config isn't included in the even.
-                        return;
-                    }
-
-                    serpent.setConfig(newConfig);
-
-                    // Remove and re-add the `Serpent` component. This will trigger `SerpentInitSystems.SpawnSystem`
-                    // to reapply the new head model.
-                    commandBuffer.removeComponent(serpentRef, Serpent.getComponentType());
-                    commandBuffer.addComponent(serpentRef, Serpent.getComponentType(), serpent);
-
-                    // Remove all bone entities. This will trigger `SerpentBoneLoadAndTransformSystem` to recreate
-                    // them with the updated config.
-                    for (final Ref<EntityStore> boneRef : serpent.bones) {
-                        if (boneRef == null || boneRef.equals(serpentRef) || !boneRef.isValid()) {
-                            continue;
-                        }
-                        commandBuffer.removeEntity(boneRef, RemoveReason.UNLOAD);
-                    }
-                })
-            );
-        }
+    public ComponentType<EntityStore, SerpentBoneAutoApplyTransform> getSerpentBoneAutoApplyTransformComponentType() {
+        return this.serpentBoneAutoApplyTransformComponentType;
     }
 }

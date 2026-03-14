@@ -11,8 +11,6 @@ import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.validation.ValidatorCache;
 import com.hypixel.hytale.codec.validation.Validators;
-import com.hypixel.hytale.math.range.IntRange;
-import com.hypixel.hytale.math.range.IntRangeBoundValidator;
 import com.hypixel.hytale.server.core.command.system.arguments.types.AssetArgumentType;
 import com.hypixel.hytale.server.core.command.system.arguments.types.SingleArgumentType;
 
@@ -29,84 +27,13 @@ public final class SerpentConfig implements JsonAssetWithMap<String, DefaultAsse
             (asset) -> asset.extraData
         )
         .appendInherited(
-            new KeyedCodec<>("Head", SerpentBoneConfig.CHILD_ASSET_CODEC, true),
-            (serpentConfig, s) -> serpentConfig.headAssetId = s,
-            (serpentConfig) -> serpentConfig.headAssetId,
-            (serpentConfig, parent) -> serpentConfig.headAssetId = parent.headAssetId
+            new KeyedCodec<>("Layout", SerpentLayoutNode.CODEC, true),
+            (serpentConfig, s) -> serpentConfig.layout = s,
+            (serpentConfig) -> serpentConfig.layout,
+            (serpentConfig, parent) -> serpentConfig.layout = parent.layout
         )
         .addValidator(Validators.nonNull())
-        .addValidator(SerpentBoneConfig.VALIDATOR_CACHE.getValidator())
         .add()
-        .appendInherited(
-            new KeyedCodec<>("Body", SerpentBoneConfig.CHILD_ASSET_CODEC, true),
-            (serpentConfig, s) -> serpentConfig.bodyAssetId = s,
-            (serpentConfig) -> serpentConfig.bodyAssetId,
-            (serpentConfig, parent) -> serpentConfig.bodyAssetId = parent.bodyAssetId
-        )
-        .addValidator(Validators.nonNull())
-        .addValidator(SerpentBoneConfig.VALIDATOR_CACHE.getValidator())
-        .add()
-        .appendInherited(
-            new KeyedCodec<>("Tail", SerpentBoneConfig.CHILD_ASSET_CODEC, true),
-            (serpentConfig, s) -> serpentConfig.tailAssetId = s,
-            (serpentConfig) -> serpentConfig.tailAssetId,
-            (serpentConfig, parent) -> serpentConfig.tailAssetId = parent.tailAssetId
-        )
-        .addValidator(Validators.nonNull())
-        .addValidator(SerpentBoneConfig.VALIDATOR_CACHE.getValidator())
-        .add()
-        .appendInherited(
-            new KeyedCodec<>("BodyBoneCount", IntRange.CODEC, true),
-            (serpentConfig, s) -> serpentConfig.bodyBoneCount = s,
-            (serpentConfig) -> serpentConfig.bodyBoneCount,
-            (serpentConfig, parent) -> serpentConfig.bodyBoneCount = parent.bodyBoneCount
-        )
-        .addValidator(Validators.nonNull())
-        .addValidator(IntRangeBoundValidator.lowerBound(0, null, true))
-        .add()
-        .appendInherited(
-            new KeyedCodec<>("DefaultHardDampingSpeed", Codec.DOUBLE, true),
-            (serpentConfig, s) -> serpentConfig.defaultHardDampingSpeed = s,
-            (serpentConfig) -> serpentConfig.defaultHardDampingSpeed,
-            (serpentConfig, parent) -> serpentConfig.defaultHardDampingSpeed = parent.defaultHardDampingSpeed
-        )
-        .documentation("Joints moving faster than this will lose that additional speed before the next tick. **Note:** Joints can exceed this if they must in order to stay attached")
-        .addValidator(Validators.nonNull())
-        .addValidator(Validators.min(0.0d))
-        .add()
-        .appendInherited(
-            new KeyedCodec<>("DefaultSoftDampingSpeed", Codec.DOUBLE, true),
-            (serpentConfig, s) -> serpentConfig.defaultSoftDampingSpeed = s,
-            (serpentConfig) -> serpentConfig.defaultSoftDampingSpeed,
-            (serpentConfig, parent) -> serpentConfig.defaultSoftDampingSpeed = parent.defaultSoftDampingSpeed
-        )
-        .documentation("Joints moving faster than this are gradually slowed by multiplying their speed by **SoftDampingCoefficient**")
-        .addValidator(Validators.nonNull())
-        .addValidator(Validators.min(0.0d))
-        .add()
-        .appendInherited(
-            new KeyedCodec<>("DefaultSoftDampingCoefficient", Codec.DOUBLE, true),
-            (serpentConfig, s) -> serpentConfig.defaultSoftDampingCoefficient = s,
-            (serpentConfig) -> serpentConfig.defaultSoftDampingCoefficient,
-            (serpentConfig, parent) -> serpentConfig.defaultSoftDampingCoefficient = parent.defaultSoftDampingCoefficient
-        )
-        .documentation("Multiplied by a joint's speed if it exceeds **SoftDampingSpeed**")
-        .addValidator(Validators.range(0.0d, 1.0d))
-        .add()
-        .appendInherited(
-            new KeyedCodec<>("DefaultSoftAngleLimit", Codec.DOUBLE, true),
-            (serpentConfig, s) -> serpentConfig.defaultSoftAngleLimit = s,
-            (serpentConfig) -> serpentConfig.defaultSoftAngleLimit,
-            (serpentConfig, parent) -> serpentConfig.defaultSoftAngleLimit = parent.defaultSoftAngleLimit
-        )
-        .addValidator(Validators.nonNull())
-        .addValidator(Validators.range(0.0, 180.0))
-        .add()
-        .afterDecode(serpentConfig -> {
-            serpentConfig.head = SerpentBoneConfig.getAssetMap().getAsset(serpentConfig.headAssetId);
-            serpentConfig.body = SerpentBoneConfig.getAssetMap().getAsset(serpentConfig.bodyAssetId);
-            serpentConfig.tail = SerpentBoneConfig.getAssetMap().getAsset(serpentConfig.tailAssetId);
-        })
         .build();
 
     public static final ValidatorCache<String> VALIDATOR_CACHE =
@@ -120,18 +47,7 @@ public final class SerpentConfig implements JsonAssetWithMap<String, DefaultAsse
 
     private String id;
     private AssetExtraInfo.Data extraData;
-    private String headAssetId;
-    private String bodyAssetId;
-    private String tailAssetId;
-    private IntRange bodyBoneCount;
-    private double defaultHardDampingSpeed;
-    private double defaultSoftDampingSpeed;
-    private double defaultSoftDampingCoefficient;
-    private double defaultSoftAngleLimit;
-
-    private SerpentBoneConfig head;
-    private SerpentBoneConfig body;
-    private SerpentBoneConfig tail;
+    private SerpentLayoutNode layout;
 
     public static AssetStore<String, SerpentConfig, DefaultAssetMap<String, SerpentConfig>> getAssetStore() {
         if (ASSET_STORE == null) {
@@ -149,35 +65,7 @@ public final class SerpentConfig implements JsonAssetWithMap<String, DefaultAsse
         return this.id;
     }
 
-    public SerpentBoneConfig getHead() {
-        return this.head;
-    }
-
-    public SerpentBoneConfig getBody() {
-        return this.body;
-    }
-
-    public SerpentBoneConfig getTail() {
-        return this.tail;
-    }
-
-    public IntRange getBodyBoneCount() {
-        return this.bodyBoneCount;
-    }
-
-    public double getDefaultHardDampingSpeed() {
-        return this.defaultHardDampingSpeed;
-    }
-
-    public double getDefaultSoftDampingSpeed() {
-        return this.defaultSoftDampingSpeed;
-    }
-
-    public double getDefaultSoftDampingCoefficient() {
-        return this.defaultSoftDampingCoefficient;
-    }
-
-    public double getDefaultSoftAngleLimit() {
-        return this.defaultSoftAngleLimit;
+    public SerpentLayoutNode layout() {
+        return this.layout;
     }
 }
