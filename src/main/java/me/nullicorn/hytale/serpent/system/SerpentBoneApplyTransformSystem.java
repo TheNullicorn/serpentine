@@ -10,6 +10,7 @@ import com.hypixel.hytale.component.dependency.SystemDependency;
 import com.hypixel.hytale.component.query.Query;
 import com.hypixel.hytale.math.vector.Transform;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
+import com.hypixel.hytale.server.core.modules.entity.system.TransformSystems;
 import com.hypixel.hytale.server.core.modules.entity.system.UpdateLocationSystems;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.hytale.serpent.component.Serpent;
@@ -17,7 +18,6 @@ import me.nullicorn.hytale.serpent.component.SerpentBone;
 import me.nullicorn.hytale.serpent.component.SerpentBoneAutoApplyTransform;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -30,8 +30,9 @@ public final class SerpentBoneApplyTransformSystem extends SerpentBoneTickingSys
     @Nonnull
     @Override
     public Set<Dependency<EntityStore>> getDependencies() {
-        return Collections.singleton(
-            new SystemDependency<>(Order.BEFORE, UpdateLocationSystems.TickingSystem.class)
+        return Set.of(
+            new SystemDependency<>(Order.BEFORE, TransformSystems.EntityTrackerUpdate.class), // The system that sends entity movements to players.
+            new SystemDependency<>(Order.BEFORE, UpdateLocationSystems.TickingSystem.class)   // The system that removes entities that leave the loaded world bounds.
         );
     }
 
