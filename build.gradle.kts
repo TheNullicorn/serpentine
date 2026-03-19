@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.hypixel.hytale:Server:2026.03.12-b1f856309")
+    implementation("com.hypixel.hytale:Server:2026.03.19-c0865d17c")
 }
 
 fun runServer(task: JavaExec, vararg extraArgs: String) {
