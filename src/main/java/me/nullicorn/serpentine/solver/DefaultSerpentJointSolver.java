@@ -3,12 +3,13 @@ package me.nullicorn.serpentine.solver;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import com.hypixel.hytale.component.ComponentAccessor;
 import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.math.matrix.Matrix4d;
 import com.hypixel.hytale.math.util.MathUtil;
 import com.hypixel.hytale.server.core.modules.entity.component.HeadRotation;
 import com.hypixel.hytale.server.core.modules.entity.component.TransformComponent;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import me.nullicorn.serpentine.component.Serpent;
+import org.joml.AxisAngle4d;
+import org.joml.Matrix4d;
 import org.joml.Vector3d;
 
 import java.util.ArrayList;
@@ -118,8 +119,8 @@ public final class DefaultSerpentJointSolver implements SerpentJointSolver {
                 final Vector3d rotationAxis = prevDirection.cross(thisDirection);
 
                 final Matrix4d rotationMatrix = new Matrix4d();
-                rotationMatrix.setRotateAxis((angle - angleLimit) * 0.9, rotationAxis.x, rotationAxis.y, rotationAxis.z);
-                rotationMatrix.multiplyDirection(newDirection);
+                rotationMatrix.rotate(new AxisAngle4d(-(angle - angleLimit) * 0.9, rotationAxis));
+                rotationMatrix.transformDirection(newDirection);
             }
 
             newDirection.mul(i == 2
